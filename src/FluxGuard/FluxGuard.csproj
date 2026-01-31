@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <PackageId>FluxGuard</PackageId>
-    <Version>0.1.0</Version>
     <Description>LLM Guardrails library for .NET - Secure by Default. Includes L1 (Regex) and L2 (ONNX ML) protection layers.</Description>
   </PropertyGroup>
 

@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <PackageId>FluxGuard.Remote</PackageId>
-    <Version>0.3.0</Version>
     <Description>FluxGuard L3 Extension - LLM Judge, Semantic Cache, and Remote Guard capabilities.</Description>
   </PropertyGroup>
 

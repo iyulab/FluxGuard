@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <PackageId>FluxGuard.SDK</PackageId>
-    <Version>0.6.0</Version>
     <Description>FluxGuard SDK - ASP.NET Core middleware and Microsoft.Extensions.AI integration for LLM protection.</Description>
   </PropertyGroup>
 
