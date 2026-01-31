@@ -1,0 +1,39 @@
+# Build outputs
+bin/
+obj/
+artifacts/
+publish/
+
+# IDE and Editor
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.idea/
+*.swp
+
+# Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# NuGet
+*.nupkg
+.nuget/
+packages/
+
+# Local development
+dev-docs/
+*.local.json
+CLAUDE.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/

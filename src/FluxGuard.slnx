@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="FluxGuard/FluxGuard.csproj" />
+    <Project Path="FluxGuard.Remote/FluxGuard.Remote.csproj" />
+    <Project Path="FluxGuard.SDK/FluxGuard.SDK.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="../tests/FluxGuard.Tests/FluxGuard.Tests.csproj" />
+    <Project Path="../tests/FluxGuard.Remote.Tests/FluxGuard.Remote.Tests.csproj" />
+  </Folder>
+</Solution>
