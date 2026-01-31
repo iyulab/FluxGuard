@@ -9,7 +9,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-all</AnalysisLevel>
-    <Version>0.10.0</Version>
+    <Version>0.10.0-preview.1</Version>
   </PropertyGroup>
 
   <PropertyGroup>
