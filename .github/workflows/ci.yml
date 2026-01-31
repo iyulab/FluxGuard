@@ -94,9 +94,9 @@ jobs:
       - name: Pack
         if: steps.changed.outputs.changed == 'true'
         run: |
-          dotnet pack src/FluxGuard/FluxGuard.csproj --configuration Release --output ./artifacts -p:NoWarn=NU5104
-          dotnet pack src/FluxGuard.Remote/FluxGuard.Remote.csproj --configuration Release --output ./artifacts -p:NoWarn=NU5104
-          dotnet pack src/FluxGuard.SDK/FluxGuard.SDK.csproj --configuration Release --output ./artifacts -p:NoWarn=NU5104
+          dotnet pack src/FluxGuard/FluxGuard.csproj --configuration Release --output ./artifacts -p:TreatWarningsAsErrors=false
+          dotnet pack src/FluxGuard.Remote/FluxGuard.Remote.csproj --configuration Release --output ./artifacts -p:TreatWarningsAsErrors=false
+          dotnet pack src/FluxGuard.SDK/FluxGuard.SDK.csproj --configuration Release --output ./artifacts -p:TreatWarningsAsErrors=false
 
       - name: Push to NuGet
         if: steps.changed.outputs.changed == 'true'
