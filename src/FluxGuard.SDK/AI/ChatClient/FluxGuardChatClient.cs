@@ -31,13 +31,13 @@ public sealed class FluxGuardChatClient : DelegatingChatClient
     }
 
     /// <inheritdoc />
-    public override async Task<ChatCompletion> CompleteAsync(
-        IList<ChatMessage> chatMessages,
+    public override async Task<ChatResponse> GetResponseAsync(
+        IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         // Check input
-        var inputText = ExtractInputText(chatMessages);
+        var inputText = ExtractInputText(messages);
         if (_options.ValidateInput && !string.IsNullOrEmpty(inputText))
         {
             var inputResult = await _guard.CheckInputAsync(inputText, cancellationToken);
@@ -55,7 +55,7 @@ public sealed class FluxGuardChatClient : DelegatingChatClient
         }
 
         // Get response from inner client
-        var response = await base.CompleteAsync(chatMessages, options, cancellationToken);
+        var response = await base.GetResponseAsync(messages, options, cancellationToken);
 
         // Check output
         if (_options.ValidateOutput)
@@ -85,13 +85,13 @@ public sealed class FluxGuardChatClient : DelegatingChatClient
     }
 
     /// <inheritdoc />
-    public override async IAsyncEnumerable<StreamingChatCompletionUpdate> CompleteStreamingAsync(
-        IList<ChatMessage> chatMessages,
+    public override async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
+        IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // Check input
-        var inputText = ExtractInputText(chatMessages);
+        var inputText = ExtractInputText(messages);
         if (_options.ValidateInput && !string.IsNullOrEmpty(inputText))
         {
             var inputResult = await _guard.CheckInputAsync(inputText, cancellationToken);
@@ -109,22 +109,22 @@ public sealed class FluxGuardChatClient : DelegatingChatClient
         }
 
         // Stream response
-        await foreach (var update in base.CompleteStreamingAsync(chatMessages, options, cancellationToken))
+        await foreach (var update in base.GetStreamingResponseAsync(messages, options, cancellationToken))
         {
             yield return update;
         }
     }
 
-    private static string? ExtractInputText(IList<ChatMessage> messages)
+    private static string? ExtractInputText(IEnumerable<ChatMessage> messages)
     {
         // Get the last user message
         var lastUserMessage = messages.LastOrDefault(m => m.Role == ChatRole.User);
         return lastUserMessage?.Text;
     }
 
-    private static string? ExtractOutputText(ChatCompletion response)
+    private static string? ExtractOutputText(ChatResponse response)
     {
-        return response.Message?.Text;
+        return response.Messages.LastOrDefault()?.Text;
     }
 }
 

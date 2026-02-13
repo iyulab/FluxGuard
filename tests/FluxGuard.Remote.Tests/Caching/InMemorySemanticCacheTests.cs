@@ -149,7 +149,7 @@ public class InMemorySemanticCacheTests
         var stats = smallCache.GetStats();
 
         // Assert - Should have evicted 10% = 1 entry
-        stats.TotalEntries.Should().BeLessOrEqualTo(10);
+        stats.TotalEntries.Should().BeLessThanOrEqualTo(10);
     }
 
     [Fact]
