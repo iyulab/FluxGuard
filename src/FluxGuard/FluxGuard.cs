@@ -12,7 +12,7 @@ namespace FluxGuard;
 /// <summary>
 /// FluxGuard core implementation
 /// </summary>
-internal sealed class FluxGuardCore : IFluxGuard
+internal sealed partial class FluxGuardCore : IFluxGuard
 {
     private readonly FluxGuardOptions _options;
     private readonly IReadOnlyList<IInputGuard> _inputGuards;
@@ -66,8 +66,7 @@ internal sealed class FluxGuardCore : IFluxGuard
             // Before check hook
             if (!await _hooks.OnBeforeCheckAsync(context))
             {
-                _logger.LogDebug("Check skipped by OnBeforeCheck hook for request {RequestId}",
-                    context.RequestId);
+                LogCheckSkippedByHook(_logger, context.RequestId);
                 return GuardResult.Pass(context.RequestId, stopwatch.Elapsed.TotalMilliseconds);
             }
 
@@ -124,16 +123,12 @@ internal sealed class FluxGuardCore : IFluxGuard
                     if (_options.FailMode == FailMode.Closed &&
                         decision.Type == FailDecisionType.Continue)
                     {
-                        _logger.LogError(ex,
-                            "Guard {GuardName} failed in Closed mode, blocking request {RequestId}",
-                            guard.Name, context.RequestId);
+                        LogGuardFailedClosedMode(_logger, ex, guard.Name, context.RequestId);
                         blockReason = $"Guard error: {guard.Name}";
                         break;
                     }
 
-                    _logger.LogWarning(ex,
-                        "Guard {GuardName} failed in Open mode for request {RequestId}, continuing",
-                        guard.Name, context.RequestId);
+                    LogGuardFailedOpenMode(_logger, ex, guard.Name, context.RequestId);
                 }
             }
 
@@ -165,13 +160,12 @@ internal sealed class FluxGuardCore : IFluxGuard
         }
         catch (OperationCanceledException)
         {
-            _logger.LogDebug("Check cancelled for request {RequestId}", context.RequestId);
+            LogCheckCancelled(_logger, context.RequestId);
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error during input check for request {RequestId}",
-                context.RequestId);
+            LogUnexpectedInputCheckError(_logger, ex, context.RequestId);
 
             return _options.FailMode == FailMode.Open
                 ? GuardResult.Pass(context.RequestId, stopwatch.Elapsed.TotalMilliseconds)
@@ -263,9 +257,7 @@ internal sealed class FluxGuardCore : IFluxGuard
                         break;
                     }
 
-                    _logger.LogWarning(ex,
-                        "Output guard {GuardName} failed for request {RequestId}",
-                        guard.Name, context.RequestId);
+                    LogOutputGuardFailed(_logger, ex, guard.Name, context.RequestId);
                 }
             }
 
@@ -297,8 +289,7 @@ internal sealed class FluxGuardCore : IFluxGuard
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error during output check for request {RequestId}",
-                context.RequestId);
+            LogUnexpectedOutputCheckError(_logger, ex, context.RequestId);
 
             return _options.FailMode == FailMode.Open
                 ? GuardResult.Pass(context.RequestId, stopwatch.Elapsed.TotalMilliseconds)
@@ -364,6 +355,27 @@ internal sealed class FluxGuardCore : IFluxGuard
                 break;
         }
     }
+
+    [LoggerMessage(LogLevel.Debug, "Check skipped by OnBeforeCheck hook for request {RequestId}")]
+    private static partial void LogCheckSkippedByHook(ILogger logger, string requestId);
+
+    [LoggerMessage(LogLevel.Error, "Guard {GuardName} failed in Closed mode, blocking request {RequestId}")]
+    private static partial void LogGuardFailedClosedMode(ILogger logger, Exception ex, string guardName, string requestId);
+
+    [LoggerMessage(LogLevel.Warning, "Guard {GuardName} failed in Open mode for request {RequestId}, continuing")]
+    private static partial void LogGuardFailedOpenMode(ILogger logger, Exception ex, string guardName, string requestId);
+
+    [LoggerMessage(LogLevel.Debug, "Check cancelled for request {RequestId}")]
+    private static partial void LogCheckCancelled(ILogger logger, string requestId);
+
+    [LoggerMessage(LogLevel.Error, "Unexpected error during input check for request {RequestId}")]
+    private static partial void LogUnexpectedInputCheckError(ILogger logger, Exception ex, string requestId);
+
+    [LoggerMessage(LogLevel.Warning, "Output guard {GuardName} failed for request {RequestId}")]
+    private static partial void LogOutputGuardFailed(ILogger logger, Exception ex, string guardName, string requestId);
+
+    [LoggerMessage(LogLevel.Error, "Unexpected error during output check for request {RequestId}")]
+    private static partial void LogUnexpectedOutputCheckError(ILogger logger, Exception ex, string requestId);
 }
 
 /// <summary>

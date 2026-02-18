@@ -152,7 +152,7 @@ public sealed class TokenizerWrapper : IDisposable
         return CreatePaddedInput(tokenIds);
     }
 
-    private TokenizedInput CreatePaddedInput(IReadOnlyList<int> tokenIds)
+    private TokenizedInput CreatePaddedInput(List<int> tokenIds)
     {
         var inputIds = new long[_maxLength];
         var attentionMask = new long[_maxLength];

@@ -12,7 +12,7 @@ namespace FluxGuard.Remote.Guards;
 /// L3 RAG Security guard for input validation
 /// Validates RAG documents for indirect injection attacks
 /// </summary>
-public sealed class L3RAGSecurityGuard : IInputGuard
+public sealed partial class L3RAGSecurityGuard : IInputGuard
 {
     private readonly IRAGSecurityPipeline _securityPipeline;
     private readonly RemoteGuardOptions _options;
@@ -120,12 +120,13 @@ public sealed class L3RAGSecurityGuard : IInputGuard
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex,
-                "RAG security check failed for request {RequestId}",
-                context.RequestId);
+            LogRAGSecurityCheckFailed(_logger, ex, context.RequestId);
 
             // Fail open
             return GuardCheckResult.Pass(Name, "RAG security check unavailable");
         }
     }
+
+    [LoggerMessage(LogLevel.Warning, "RAG security check failed for request {RequestId}")]
+    private static partial void LogRAGSecurityCheckFailed(ILogger logger, Exception ex, string requestId);
 }

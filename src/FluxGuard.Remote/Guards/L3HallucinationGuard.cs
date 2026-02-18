@@ -13,7 +13,7 @@ namespace FluxGuard.Remote.Guards;
 /// L3 Hallucination guard for output validation
 /// Detects hallucinations in LLM outputs using groundedness verification
 /// </summary>
-public sealed class L3HallucinationGuard : IOutputGuard
+public sealed partial class L3HallucinationGuard : IOutputGuard
 {
     private readonly IHallucinationDetector _detector;
     private readonly RemoteGuardOptions _options;
@@ -67,9 +67,7 @@ public sealed class L3HallucinationGuard : IOutputGuard
         if (string.IsNullOrEmpty(groundingContext))
         {
             // No grounding context - skip hallucination check
-            _logger.LogDebug(
-                "No grounding context for hallucination check, skipping for request {RequestId}",
-                context.RequestId);
+            LogNoGroundingContext(_logger, context.RequestId);
             return GuardCheckResult.Pass(Name);
         }
 
@@ -119,12 +117,16 @@ public sealed class L3HallucinationGuard : IOutputGuard
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex,
-                "Hallucination check failed for request {RequestId}",
-                context.RequestId);
+            LogHallucinationCheckFailed(_logger, ex, context.RequestId);
 
             // Fail open
             return GuardCheckResult.Pass(Name, "Hallucination check unavailable");
         }
     }
+
+    [LoggerMessage(LogLevel.Debug, "No grounding context for hallucination check, skipping for request {RequestId}")]
+    private static partial void LogNoGroundingContext(ILogger logger, string requestId);
+
+    [LoggerMessage(LogLevel.Warning, "Hallucination check failed for request {RequestId}")]
+    private static partial void LogHallucinationCheckFailed(ILogger logger, Exception ex, string requestId);
 }

@@ -13,7 +13,7 @@ namespace FluxGuard.Remote.Providers;
 /// <summary>
 /// OpenAI/Azure OpenAI completion service implementation
 /// </summary>
-public sealed class OpenAICompletionService : ITextCompletionService, IDisposable
+public sealed partial class OpenAICompletionService : ITextCompletionService, IDisposable
 {
     private readonly HttpClient _httpClient;
     private readonly OpenAIProviderOptions _options;
@@ -112,10 +112,7 @@ public sealed class OpenAICompletionService : ITextCompletionService, IDisposabl
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning(
-                    "OpenAI API error: {StatusCode} - {Content}",
-                    response.StatusCode,
-                    content);
+                LogOpenAIApiError(_logger, response.StatusCode, content);
                 return CompletionResponse.Fail(
                     $"API error: {response.StatusCode}",
                     stopwatch.Elapsed.TotalMilliseconds);
@@ -144,7 +141,7 @@ public sealed class OpenAICompletionService : ITextCompletionService, IDisposabl
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error calling OpenAI API");
+            LogOpenAICallError(_logger, ex);
             return CompletionResponse.Fail(ex.Message, stopwatch.Elapsed.TotalMilliseconds);
         }
     }
@@ -243,4 +240,10 @@ public sealed class OpenAICompletionService : ITextCompletionService, IDisposabl
         public int CompletionTokens { get; init; }
         public int TotalTokens { get; init; }
     }
+
+    [LoggerMessage(LogLevel.Warning, "OpenAI API error: {StatusCode} - {Content}")]
+    private static partial void LogOpenAIApiError(ILogger logger, System.Net.HttpStatusCode statusCode, string content);
+
+    [LoggerMessage(LogLevel.Error, "Error calling OpenAI API")]
+    private static partial void LogOpenAICallError(ILogger logger, Exception ex);
 }

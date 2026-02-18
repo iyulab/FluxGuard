@@ -14,7 +14,7 @@ namespace FluxGuard.Remote.Guards;
 /// L3 LLM Judge guard
 /// Uses LLM-as-Judge for uncertain or escalated cases
 /// </summary>
-public sealed class L3LLMJudgeGuard : IRemoteGuard
+public sealed partial class L3LLMJudgeGuard : IRemoteGuard
 {
     private readonly ITextCompletionService _completionService;
     private readonly ISemanticCache _cache;
@@ -65,7 +65,7 @@ public sealed class L3LLMJudgeGuard : IRemoteGuard
         var cached = await _cache.TryGetAsync(context.OriginalInput, "InputJudge", cancellationToken);
         if (cached is not null)
         {
-            _logger.LogDebug("L3 cache hit for request {RequestId}", context.RequestId);
+            LogCacheHit(_logger, context.RequestId);
             return RemoteGuardResult.FromCacheEntry(cached, stopwatch.Elapsed.TotalMilliseconds);
         }
 
@@ -89,10 +89,7 @@ public sealed class L3LLMJudgeGuard : IRemoteGuard
 
         if (!response.Success || string.IsNullOrEmpty(response.Content))
         {
-            _logger.LogWarning(
-                "L3 Judge failed for request {RequestId}: {Error}",
-                context.RequestId,
-                response.Error);
+            LogJudgeFailed(_logger, context.RequestId, response.Error);
 
             // Return pass on failure (FailMode.Open)
             return RemoteGuardResult.Pass(stopwatch.Elapsed.TotalMilliseconds, "Judge unavailable");
@@ -103,11 +100,7 @@ public sealed class L3LLMJudgeGuard : IRemoteGuard
         // Cache the result
         await _cache.SetAsync(context.OriginalInput, "InputJudge", result, cancellationToken);
 
-        _logger.LogDebug(
-            "L3 Judge completed for request {RequestId}: Safe={IsSafe}, Score={Score}",
-            context.RequestId,
-            result.Passed,
-            result.Score);
+        LogJudgeCompleted(_logger, context.RequestId, result.Passed, result.Score);
 
         return result;
     }
@@ -144,10 +137,7 @@ public sealed class L3LLMJudgeGuard : IRemoteGuard
 
         if (!response.Success || string.IsNullOrEmpty(response.Content))
         {
-            _logger.LogWarning(
-                "L3 Output Judge failed for request {RequestId}: {Error}",
-                context.RequestId,
-                response.Error);
+            LogOutputJudgeFailed(_logger, context.RequestId, response.Error);
 
             return RemoteGuardResult.Pass(stopwatch.Elapsed.TotalMilliseconds, "Judge unavailable");
         }
@@ -199,7 +189,7 @@ public sealed class L3LLMJudgeGuard : IRemoteGuard
         }
         catch (JsonException ex)
         {
-            _logger.LogWarning(ex, "Failed to parse L3 Judge response: {Content}", content);
+            LogJudgeParseError(_logger, ex, content);
             return RemoteGuardResult.Pass(latencyMs, "Parse error");
         }
     }
@@ -215,4 +205,19 @@ public sealed class L3LLMJudgeGuard : IRemoteGuard
         public List<string>? Categories { get; init; }
         public string? Reasoning { get; init; }
     }
+
+    [LoggerMessage(LogLevel.Debug, "L3 cache hit for request {RequestId}")]
+    private static partial void LogCacheHit(ILogger logger, string requestId);
+
+    [LoggerMessage(LogLevel.Warning, "L3 Judge failed for request {RequestId}: {Error}")]
+    private static partial void LogJudgeFailed(ILogger logger, string requestId, string? error);
+
+    [LoggerMessage(LogLevel.Debug, "L3 Judge completed for request {RequestId}: Safe={IsSafe}, Score={Score}")]
+    private static partial void LogJudgeCompleted(ILogger logger, string requestId, bool isSafe, double score);
+
+    [LoggerMessage(LogLevel.Warning, "L3 Output Judge failed for request {RequestId}: {Error}")]
+    private static partial void LogOutputJudgeFailed(ILogger logger, string requestId, string? error);
+
+    [LoggerMessage(LogLevel.Warning, "Failed to parse L3 Judge response: {Content}")]
+    private static partial void LogJudgeParseError(ILogger logger, Exception ex, string content);
 }

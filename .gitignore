@@ -26,6 +26,7 @@ coverage/
 packages/
 
 # Local development
+claudedocs/
 dev-docs/
 *.local.json
 CLAUDE.md

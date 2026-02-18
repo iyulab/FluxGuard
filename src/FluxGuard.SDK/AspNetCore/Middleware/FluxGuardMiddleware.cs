@@ -11,7 +11,7 @@ namespace FluxGuard.SDK.AspNetCore.Middleware;
 /// FluxGuard middleware for ASP.NET Core
 /// Protects LLM API endpoints by validating incoming requests
 /// </summary>
-public sealed class FluxGuardMiddleware
+public sealed partial class FluxGuardMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IFluxGuard _guard;
@@ -79,11 +79,7 @@ public sealed class FluxGuardMiddleware
 
         if (result.IsBlocked)
         {
-            _logger.LogWarning(
-                "Request blocked by FluxGuard: {Reason}, Path: {Path}, Score: {Score}",
-                result.BlockReason,
-                context.Request.Path,
-                result.Score);
+            LogRequestBlocked(_logger, result.BlockReason, context.Request.Path, result.Score);
 
             await WriteBlockedResponseAsync(context, result);
             return;
@@ -91,10 +87,7 @@ public sealed class FluxGuardMiddleware
 
         if (result.IsFlagged)
         {
-            _logger.LogInformation(
-                "Request flagged by FluxGuard: Score: {Score}, Path: {Path}",
-                result.Score,
-                context.Request.Path);
+            LogRequestFlagged(_logger, result.Score, context.Request.Path);
 
             // Add header to indicate flagged request
             context.Response.Headers["X-FluxGuard-Flagged"] = "true";
@@ -211,4 +204,10 @@ public sealed class FluxGuardMiddleware
         public string? Details { get; set; }
         public double? Score { get; set; }
     }
+
+    [LoggerMessage(LogLevel.Warning, "Request blocked by FluxGuard: {Reason}, Path: {Path}, Score: {Score}")]
+    private static partial void LogRequestBlocked(ILogger logger, string? reason, PathString path, double score);
+
+    [LoggerMessage(LogLevel.Information, "Request flagged by FluxGuard: Score: {Score}, Path: {Path}")]
+    private static partial void LogRequestFlagged(ILogger logger, double score, PathString path);
 }

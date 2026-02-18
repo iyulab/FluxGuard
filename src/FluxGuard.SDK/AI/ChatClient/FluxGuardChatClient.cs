@@ -9,7 +9,7 @@ namespace FluxGuard.SDK.AI.ChatClient;
 /// FluxGuard-protected chat client wrapper
 /// Wraps an IChatClient with input/output validation
 /// </summary>
-public sealed class FluxGuardChatClient : DelegatingChatClient
+public sealed partial class FluxGuardChatClient : DelegatingChatClient
 {
     private readonly IFluxGuard _guard;
     private readonly ILogger<FluxGuardChatClient> _logger;
@@ -44,9 +44,7 @@ public sealed class FluxGuardChatClient : DelegatingChatClient
 
             if (inputResult.IsBlocked)
             {
-                _logger.LogWarning(
-                    "Chat request blocked: {Reason}",
-                    inputResult.BlockReason);
+                LogChatRequestBlocked(_logger, inputResult.BlockReason);
 
                 throw new FluxGuardChatBlockedException(
                     "Request blocked by security guard",
@@ -70,9 +68,7 @@ public sealed class FluxGuardChatClient : DelegatingChatClient
 
                 if (outputResult.IsBlocked)
                 {
-                    _logger.LogWarning(
-                        "Chat response blocked: {Reason}",
-                        outputResult.BlockReason);
+                    LogChatResponseBlocked(_logger, outputResult.BlockReason);
 
                     throw new FluxGuardChatBlockedException(
                         "Response blocked by security guard",
@@ -98,9 +94,7 @@ public sealed class FluxGuardChatClient : DelegatingChatClient
 
             if (inputResult.IsBlocked)
             {
-                _logger.LogWarning(
-                    "Streaming request blocked: {Reason}",
-                    inputResult.BlockReason);
+                LogStreamingRequestBlocked(_logger, inputResult.BlockReason);
 
                 throw new FluxGuardChatBlockedException(
                     "Request blocked by security guard",
@@ -126,6 +120,15 @@ public sealed class FluxGuardChatClient : DelegatingChatClient
     {
         return response.Messages.LastOrDefault()?.Text;
     }
+
+    [LoggerMessage(LogLevel.Warning, "Chat request blocked: {Reason}")]
+    private static partial void LogChatRequestBlocked(ILogger logger, string? reason);
+
+    [LoggerMessage(LogLevel.Warning, "Chat response blocked: {Reason}")]
+    private static partial void LogChatResponseBlocked(ILogger logger, string? reason);
+
+    [LoggerMessage(LogLevel.Warning, "Streaming request blocked: {Reason}")]
+    private static partial void LogStreamingRequestBlocked(ILogger logger, string? reason);
 }
 
 /// <summary>

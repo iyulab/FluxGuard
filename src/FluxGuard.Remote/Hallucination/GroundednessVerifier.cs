@@ -10,7 +10,7 @@ namespace FluxGuard.Remote.Hallucination;
 /// Verifies that LLM output is grounded in the provided context
 /// Uses LLM-as-Judge for verification
 /// </summary>
-public sealed class GroundednessVerifier : IHallucinationDetector
+public sealed partial class GroundednessVerifier : IHallucinationDetector
 {
     private readonly ITextCompletionService _completionService;
     private readonly ILogger<GroundednessVerifier> _logger;
@@ -74,9 +74,7 @@ public sealed class GroundednessVerifier : IHallucinationDetector
 
         if (string.IsNullOrEmpty(groundingContext))
         {
-            _logger.LogDebug(
-                "No grounding context provided for request {RequestId}, skipping verification",
-                context.RequestId);
+            LogNoGroundingContext(_logger, context.RequestId);
             return HallucinationResult.Grounded(0.5, stopwatch.Elapsed.TotalMilliseconds);
         }
 
@@ -108,10 +106,7 @@ public sealed class GroundednessVerifier : IHallucinationDetector
 
         if (!response.Success || string.IsNullOrEmpty(response.Content))
         {
-            _logger.LogWarning(
-                "Groundedness verification failed for request {RequestId}: {Error}",
-                context.RequestId,
-                response.Error);
+            LogGroundednessVerificationFailed(_logger, context.RequestId, response.Error);
             return HallucinationResult.Grounded(0.5, stopwatch.Elapsed.TotalMilliseconds);
         }
 
@@ -155,7 +150,7 @@ public sealed class GroundednessVerifier : IHallucinationDetector
         }
         catch (JsonException ex)
         {
-            _logger.LogWarning(ex, "Failed to parse groundedness response");
+            LogGroundednessParseError(_logger, ex);
             return HallucinationResult.Grounded(0.5, latencyMs);
         }
     }
@@ -192,4 +187,13 @@ public sealed class GroundednessVerifier : IHallucinationDetector
         public string? Type { get; init; }
         public string? Correction { get; init; }
     }
+
+    [LoggerMessage(LogLevel.Debug, "No grounding context provided for request {RequestId}, skipping verification")]
+    private static partial void LogNoGroundingContext(ILogger logger, string requestId);
+
+    [LoggerMessage(LogLevel.Warning, "Groundedness verification failed for request {RequestId}: {Error}")]
+    private static partial void LogGroundednessVerificationFailed(ILogger logger, string requestId, string? error);
+
+    [LoggerMessage(LogLevel.Warning, "Failed to parse groundedness response")]
+    private static partial void LogGroundednessParseError(ILogger logger, Exception ex);
 }
