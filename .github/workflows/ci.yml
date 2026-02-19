@@ -37,13 +37,13 @@ jobs:
           dotnet-quality: 'preview'
 
       - name: Restore dependencies
-        run: dotnet restore src/FluxGuard.slnx
+        run: dotnet restore FluxGuard.slnx
 
       - name: Build
-        run: dotnet build src/FluxGuard.slnx --no-restore --configuration Release
+        run: dotnet build FluxGuard.slnx --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test src/FluxGuard.slnx --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+        run: dotnet test FluxGuard.slnx --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
 
       - name: Upload coverage reports
         if: matrix.os == 'ubuntu-latest'
