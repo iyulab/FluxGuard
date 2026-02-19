@@ -28,20 +28,20 @@ public sealed record FailDecision
     public static FailDecision Continue { get; } = new() { Type = FailDecisionType.Continue };
 
     /// <summary>
-    /// Override to pass
+    /// Override to pass (ignores the original guard result)
     /// </summary>
     public static FailDecision AllowPass(string? reason = null) => new()
     {
-        Type = FailDecisionType.Override,
+        Type = FailDecisionType.AllowPass,
         Reason = reason
     };
 
     /// <summary>
-    /// Override to block
+    /// Override to block (ignores the original guard result)
     /// </summary>
     public static FailDecision ForceBlock(string reason) => new()
     {
-        Type = FailDecisionType.Override,
+        Type = FailDecisionType.ForceBlock,
         Reason = reason
     };
 }
@@ -54,6 +54,12 @@ public enum FailDecisionType
     /// <summary>Continue with default processing</summary>
     Continue,
 
-    /// <summary>Override result</summary>
-    Override
+    /// <summary>Override result with explicit OverriddenResult</summary>
+    Override,
+
+    /// <summary>Override to pass</summary>
+    AllowPass,
+
+    /// <summary>Override to block</summary>
+    ForceBlock
 }

@@ -154,10 +154,20 @@ internal sealed partial class FluxGuardCore : IFluxGuard
 
             // Custom decision hook
             var customDecision = await _hooks.OnCustomDecisionAsync(context, guardResult);
-            if (customDecision?.Type == FailDecisionType.Override &&
-                customDecision.OverriddenResult is not null)
+            if (customDecision is not null)
             {
-                guardResult = customDecision.OverriddenResult;
+                guardResult = customDecision.Type switch
+                {
+                    FailDecisionType.Override when customDecision.OverriddenResult is not null
+                        => customDecision.OverriddenResult,
+                    FailDecisionType.AllowPass
+                        => GuardResult.Pass(guardResult.RequestId, guardResult.LatencyMs),
+                    FailDecisionType.ForceBlock
+                        => GuardResult.Block(guardResult.RequestId,
+                            customDecision.Reason ?? "Forced block",
+                            1.0, Severity.Critical, [], guardResult.LatencyMs),
+                    _ => guardResult
+                };
             }
 
             // Call result-specific hooks
@@ -291,10 +301,20 @@ internal sealed partial class FluxGuardCore : IFluxGuard
 
             // Custom decision hook
             var customDecision = await _hooks.OnCustomDecisionAsync(context, guardResult);
-            if (customDecision?.Type == FailDecisionType.Override &&
-                customDecision.OverriddenResult is not null)
+            if (customDecision is not null)
             {
-                guardResult = customDecision.OverriddenResult;
+                guardResult = customDecision.Type switch
+                {
+                    FailDecisionType.Override when customDecision.OverriddenResult is not null
+                        => customDecision.OverriddenResult,
+                    FailDecisionType.AllowPass
+                        => GuardResult.Pass(guardResult.RequestId, guardResult.LatencyMs),
+                    FailDecisionType.ForceBlock
+                        => GuardResult.Block(guardResult.RequestId,
+                            customDecision.Reason ?? "Forced block",
+                            1.0, Severity.Critical, [], guardResult.LatencyMs),
+                    _ => guardResult
+                };
             }
 
             await CallResultHooksAsync(context, guardResult);

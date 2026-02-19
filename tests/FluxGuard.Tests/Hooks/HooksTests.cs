@@ -184,11 +184,11 @@ public class FailDecisionTests
     }
 
     [Fact]
-    public void AllowPass_HasOverrideType()
+    public void AllowPass_HasAllowPassType()
     {
         var decision = FailDecision.AllowPass("test reason");
 
-        decision.Type.Should().Be(FailDecisionType.Override);
+        decision.Type.Should().Be(FailDecisionType.AllowPass);
         decision.Reason.Should().Be("test reason");
     }
 
@@ -201,28 +201,29 @@ public class FailDecisionTests
     }
 
     [Fact]
-    public void ForceBlock_HasOverrideType()
+    public void ForceBlock_HasForceBlockType()
     {
         var decision = FailDecision.ForceBlock("block reason");
 
-        decision.Type.Should().Be(FailDecisionType.Override);
+        decision.Type.Should().Be(FailDecisionType.ForceBlock);
         decision.Reason.Should().Be("block reason");
     }
 
     [Fact]
-    public void AllowPass_DoesNotSetOverriddenResult()
+    public void AllowPass_OverriddenResult_IsNull_ByDesign()
     {
-        // Note: AllowPass/ForceBlock set Type=Override but NOT OverriddenResult.
-        // FluxGuardCore only applies override when OverriddenResult is not null.
-        // This is a known design limitation.
+        // AllowPass uses FailDecisionType.AllowPass, so FluxGuard constructs
+        // the GuardResult.Pass() automatically from the current context.
         var decision = FailDecision.AllowPass();
 
         decision.OverriddenResult.Should().BeNull();
     }
 
     [Fact]
-    public void ForceBlock_DoesNotSetOverriddenResult()
+    public void ForceBlock_OverriddenResult_IsNull_ByDesign()
     {
+        // ForceBlock uses FailDecisionType.ForceBlock, so FluxGuard constructs
+        // the GuardResult.Block() automatically from the current context.
         var decision = FailDecision.ForceBlock("reason");
 
         decision.OverriddenResult.Should().BeNull();
@@ -231,6 +232,8 @@ public class FailDecisionTests
     [Theory]
     [InlineData(FailDecisionType.Continue, 0)]
     [InlineData(FailDecisionType.Override, 1)]
+    [InlineData(FailDecisionType.AllowPass, 2)]
+    [InlineData(FailDecisionType.ForceBlock, 3)]
     public void FailDecisionType_HasExpectedValues(FailDecisionType type, int expected)
     {
         ((int)type).Should().Be(expected);
