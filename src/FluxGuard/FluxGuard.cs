@@ -17,6 +17,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
     private readonly FluxGuardOptions _options;
     private readonly IReadOnlyList<IInputGuard> _inputGuards;
     private readonly IReadOnlyList<IOutputGuard> _outputGuards;
+    private readonly IReadOnlyList<IRemoteGuard> _remoteGuards;
     private readonly IFluxGuardHooks _hooks;
     private readonly ILogger<FluxGuardCore> _logger;
     private readonly UnicodeNormalizer _normalizer;
@@ -25,12 +26,14 @@ internal sealed partial class FluxGuardCore : IFluxGuard
         FluxGuardOptions options,
         IReadOnlyList<IInputGuard> inputGuards,
         IReadOnlyList<IOutputGuard> outputGuards,
+        IReadOnlyList<IRemoteGuard> remoteGuards,
         IFluxGuardHooks hooks,
         ILoggerFactory loggerFactory)
     {
         _options = options;
         _inputGuards = [.. inputGuards.OrderBy(g => g.Order)];
         _outputGuards = [.. outputGuards.OrderBy(g => g.Order)];
+        _remoteGuards = [.. remoteGuards.Where(g => g.IsEnabled).OrderBy(g => g.Order)];
         _hooks = hooks;
         _logger = loggerFactory.CreateLogger<FluxGuardCore>();
         _normalizer = new UnicodeNormalizer(
@@ -142,6 +145,13 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 blockReason,
                 stopwatch.Elapsed.TotalMilliseconds);
 
+            // L3 escalation: execute remote guards when escalation is needed
+            if (guardResult.NeedsEscalation && _remoteGuards.Count > 0)
+            {
+                guardResult = await ExecuteInputEscalationAsync(
+                    context, guardResult, stopwatch);
+            }
+
             // Custom decision hook
             var customDecision = await _hooks.OnCustomDecisionAsync(context, guardResult);
             if (customDecision?.Type == FailDecisionType.Override &&
@@ -209,6 +219,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
             var triggeredGuards = new List<TriggeredGuard>();
             var maxSeverity = Severity.Info;
             var maxScore = 0.0;
+            var needsEscalation = false;
             string? blockReason = null;
 
             foreach (var guard in _outputGuards.Where(g => g.IsEnabled))
@@ -234,6 +245,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
 
                         if (result.Score > maxScore) maxScore = result.Score;
                         if (result.Severity > maxSeverity) maxSeverity = result.Severity;
+                        if (result.NeedsEscalation) needsEscalation = true;
 
                         if (!result.Passed && result.Severity >= Severity.High)
                         {
@@ -266,9 +278,16 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 maxScore,
                 maxSeverity,
                 triggeredGuards,
-                needsEscalation: false,
+                needsEscalation,
                 blockReason,
                 stopwatch.Elapsed.TotalMilliseconds);
+
+            // L3 escalation: execute remote guards when escalation is needed
+            if (guardResult.NeedsEscalation && _remoteGuards.Count > 0)
+            {
+                guardResult = await ExecuteOutputEscalationAsync(
+                    context, output, guardResult, stopwatch);
+            }
 
             // Custom decision hook
             var customDecision = await _hooks.OnCustomDecisionAsync(context, guardResult);
@@ -340,6 +359,209 @@ internal sealed partial class FluxGuardCore : IFluxGuard
         return GuardResult.Pass(requestId, latencyMs);
     }
 
+    private async Task<GuardResult> ExecuteInputEscalationAsync(
+        GuardContext context,
+        GuardResult l2Result,
+        Stopwatch stopwatch)
+    {
+        // Before escalation hook
+        if (!await _hooks.OnBeforeEscalationAsync(context, l2Result))
+        {
+            LogEscalationSkippedByHook(_logger, context.RequestId);
+            return l2Result;
+        }
+
+        LogEscalationStarted(_logger, context.RequestId, _remoteGuards.Count);
+
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
+            cts.CancelAfter(_options.EscalationTimeoutMs);
+
+            return await ExecuteRemoteInputGuardsAsync(context, l2Result, stopwatch, cts.Token);
+        }
+        catch (OperationCanceledException) when (!context.CancellationToken.IsCancellationRequested)
+        {
+            // Escalation timeout (not user cancellation)
+            LogEscalationTimeout(_logger, context.RequestId, _options.EscalationTimeoutMs);
+            return await _hooks.OnEscalationTimeoutAsync(context, l2Result);
+        }
+    }
+
+    private async Task<GuardResult> ExecuteOutputEscalationAsync(
+        GuardContext context,
+        string output,
+        GuardResult l2Result,
+        Stopwatch stopwatch)
+    {
+        if (!await _hooks.OnBeforeEscalationAsync(context, l2Result))
+        {
+            LogEscalationSkippedByHook(_logger, context.RequestId);
+            return l2Result;
+        }
+
+        LogEscalationStarted(_logger, context.RequestId, _remoteGuards.Count);
+
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
+            cts.CancelAfter(_options.EscalationTimeoutMs);
+
+            return await ExecuteRemoteOutputGuardsAsync(context, output, l2Result, stopwatch, cts.Token);
+        }
+        catch (OperationCanceledException) when (!context.CancellationToken.IsCancellationRequested)
+        {
+            LogEscalationTimeout(_logger, context.RequestId, _options.EscalationTimeoutMs);
+            return await _hooks.OnEscalationTimeoutAsync(context, l2Result);
+        }
+    }
+
+    private async Task<GuardResult> ExecuteRemoteInputGuardsAsync(
+        GuardContext context,
+        GuardResult l2Result,
+        Stopwatch stopwatch,
+        CancellationToken cancellationToken)
+    {
+        var l3TriggeredGuards = new List<TriggeredGuard>(l2Result.TriggeredGuards);
+        var maxScore = l2Result.Score;
+        var maxSeverity = l2Result.MaxSeverity;
+        string? blockReason = null;
+
+        foreach (var guard in _remoteGuards)
+        {
+            try
+            {
+                var result = await guard.CheckInputAsync(context, l2Result, cancellationToken);
+
+                l3TriggeredGuards.Add(new TriggeredGuard
+                {
+                    GuardName = guard.Name,
+                    Layer = guard.Layer,
+                    Confidence = result.Score,
+                    Severity = result.Severity,
+                    Details = result.Reasoning
+                });
+
+                if (result.Score > maxScore) maxScore = result.Score;
+                if (result.Severity > maxSeverity) maxSeverity = result.Severity;
+
+                if (!result.Passed)
+                {
+                    blockReason = $"{guard.Name}: {result.Reasoning ?? "Blocked by L3 judge"}";
+                    break;
+                }
+
+                LogRemoteGuardCompleted(_logger, context.RequestId, guard.Name,
+                    result.Passed, result.Score);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                LogRemoteGuardFailed(_logger, ex, guard.Name, context.RequestId);
+
+                if (_options.FailMode == FailMode.Closed)
+                {
+                    blockReason = $"L3 guard error: {guard.Name}";
+                    break;
+                }
+            }
+        }
+
+        return MergeL3Result(context.RequestId, maxScore, maxSeverity,
+            l3TriggeredGuards, blockReason, stopwatch.Elapsed.TotalMilliseconds);
+    }
+
+    private async Task<GuardResult> ExecuteRemoteOutputGuardsAsync(
+        GuardContext context,
+        string output,
+        GuardResult l2Result,
+        Stopwatch stopwatch,
+        CancellationToken cancellationToken)
+    {
+        var l3TriggeredGuards = new List<TriggeredGuard>(l2Result.TriggeredGuards);
+        var maxScore = l2Result.Score;
+        var maxSeverity = l2Result.MaxSeverity;
+        string? blockReason = null;
+
+        foreach (var guard in _remoteGuards)
+        {
+            try
+            {
+                var result = await guard.CheckOutputAsync(context, output, l2Result, cancellationToken);
+
+                l3TriggeredGuards.Add(new TriggeredGuard
+                {
+                    GuardName = guard.Name,
+                    Layer = guard.Layer,
+                    Confidence = result.Score,
+                    Severity = result.Severity,
+                    Details = result.Reasoning
+                });
+
+                if (result.Score > maxScore) maxScore = result.Score;
+                if (result.Severity > maxSeverity) maxSeverity = result.Severity;
+
+                if (!result.Passed)
+                {
+                    blockReason = $"{guard.Name}: {result.Reasoning ?? "Blocked by L3 judge"}";
+                    break;
+                }
+
+                LogRemoteGuardCompleted(_logger, context.RequestId, guard.Name,
+                    result.Passed, result.Score);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                LogRemoteGuardFailed(_logger, ex, guard.Name, context.RequestId);
+
+                if (_options.FailMode == FailMode.Closed)
+                {
+                    blockReason = $"L3 guard error: {guard.Name}";
+                    break;
+                }
+            }
+        }
+
+        return MergeL3Result(context.RequestId, maxScore, maxSeverity,
+            l3TriggeredGuards, blockReason, stopwatch.Elapsed.TotalMilliseconds);
+    }
+
+    private GuardResult MergeL3Result(
+        string requestId,
+        double maxScore,
+        Severity maxSeverity,
+        List<TriggeredGuard> triggeredGuards,
+        string? blockReason,
+        double latencyMs)
+    {
+        if (blockReason is not null)
+        {
+            return GuardResult.Block(requestId, blockReason, maxScore, maxSeverity,
+                triggeredGuards, latencyMs);
+        }
+
+        if (maxScore >= _options.BlockThreshold)
+        {
+            return GuardResult.Block(requestId,
+                triggeredGuards.LastOrDefault()?.Details ?? "L3 threshold exceeded",
+                maxScore, maxSeverity, triggeredGuards, latencyMs);
+        }
+
+        if (maxScore >= _options.FlagThreshold)
+        {
+            return GuardResult.Flag(requestId, maxScore, maxSeverity, triggeredGuards, latencyMs);
+        }
+
+        return GuardResult.Pass(requestId, latencyMs);
+    }
+
     private async ValueTask CallResultHooksAsync(GuardContext context, GuardResult result)
     {
         switch (result.Decision)
@@ -349,6 +571,9 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 break;
             case GuardDecision.Flagged:
                 await _hooks.OnFlaggedAsync(context, result);
+                break;
+            case GuardDecision.NeedsEscalation:
+                // NeedsEscalation without remote guards — no specific hook
                 break;
             case GuardDecision.Pass:
                 await _hooks.OnPassedAsync(context, result);
@@ -376,6 +601,21 @@ internal sealed partial class FluxGuardCore : IFluxGuard
 
     [LoggerMessage(LogLevel.Error, "Unexpected error during output check for request {RequestId}")]
     private static partial void LogUnexpectedOutputCheckError(ILogger logger, Exception ex, string requestId);
+
+    [LoggerMessage(LogLevel.Debug, "L3 escalation skipped by hook for request {RequestId}")]
+    private static partial void LogEscalationSkippedByHook(ILogger logger, string requestId);
+
+    [LoggerMessage(LogLevel.Information, "L3 escalation started for request {RequestId}, {GuardCount} remote guard(s)")]
+    private static partial void LogEscalationStarted(ILogger logger, string requestId, int guardCount);
+
+    [LoggerMessage(LogLevel.Warning, "L3 escalation timed out for request {RequestId} after {TimeoutMs}ms")]
+    private static partial void LogEscalationTimeout(ILogger logger, string requestId, int timeoutMs);
+
+    [LoggerMessage(LogLevel.Debug, "L3 remote guard {GuardName} completed for request {RequestId}: Passed={Passed}, Score={Score}")]
+    private static partial void LogRemoteGuardCompleted(ILogger logger, string requestId, string guardName, bool passed, double score);
+
+    [LoggerMessage(LogLevel.Warning, "L3 remote guard {GuardName} failed for request {RequestId}")]
+    private static partial void LogRemoteGuardFailed(ILogger logger, Exception ex, string guardName, string requestId);
 }
 
 /// <summary>

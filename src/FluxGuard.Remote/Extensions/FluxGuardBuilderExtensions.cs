@@ -1,9 +1,13 @@
+using FluxGuard.Abstractions;
 using FluxGuard.Remote.Abstractions;
 using FluxGuard.Remote.Caching;
 using FluxGuard.Remote.Configuration;
 using FluxGuard.Remote.Guards;
 using FluxGuard.Remote.Providers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace FluxGuard.Remote.Extensions;
 
@@ -65,6 +69,8 @@ public sealed class RemoteGuardConfigurator
 {
     private readonly FluxGuardBuilder _builder;
     private readonly RemoteGuardOptions _options;
+    private ILoggerFactory? _loggerFactory;
+    private bool _guardsRegistered;
 
     internal RemoteGuardConfigurator(FluxGuardBuilder builder, RemoteGuardOptions options)
     {
@@ -119,6 +125,17 @@ public sealed class RemoteGuardConfigurator
     }
 
     /// <summary>
+    /// Configure logging
+    /// </summary>
+    /// <param name="loggerFactory">Logger factory</param>
+    /// <returns>Configurator</returns>
+    public RemoteGuardConfigurator WithLogging(ILoggerFactory loggerFactory)
+    {
+        _loggerFactory = loggerFactory;
+        return this;
+    }
+
+    /// <summary>
     /// Configure block threshold
     /// </summary>
     /// <param name="threshold">Threshold (0.0 ~ 1.0)</param>
@@ -142,7 +159,11 @@ public sealed class RemoteGuardConfigurator
     /// <summary>
     /// Convert to FluxGuardBuilder for fluent chaining
     /// </summary>
-    public FluxGuardBuilder Build() => _builder;
+    public FluxGuardBuilder Build()
+    {
+        EnsureGuardsRegistered();
+        return _builder;
+    }
 
     /// <summary>
     /// Implicit conversion back to builder for fluent chaining
@@ -152,7 +173,34 @@ public sealed class RemoteGuardConfigurator
         Justification = "Build() method provides the named alternate")]
     public static implicit operator FluxGuardBuilder(RemoteGuardConfigurator configurator)
     {
+        configurator.EnsureGuardsRegistered();
         return configurator._builder;
+    }
+
+    private void EnsureGuardsRegistered()
+    {
+        if (_guardsRegistered)
+            return;
+
+        _guardsRegistered = true;
+
+        // Set escalation timeout from remote guard options
+        _builder.Configure(opts => opts.EscalationTimeoutMs = _options.TimeoutMs);
+
+        // Create L3 guard dependencies and register
+        var loggerFactory = _loggerFactory ?? NullLoggerFactory.Instance;
+        var optionsWrapper = Options.Create(_options);
+        var completionService = new OpenAICompletionService(
+            optionsWrapper,
+            loggerFactory.CreateLogger<OpenAICompletionService>());
+        var cache = new InMemorySemanticCache(optionsWrapper);
+        var judge = new L3LLMJudgeGuard(
+            completionService,
+            cache,
+            optionsWrapper,
+            loggerFactory.CreateLogger<L3LLMJudgeGuard>());
+
+        _builder.AddRemoteGuard(judge);
     }
 }
 

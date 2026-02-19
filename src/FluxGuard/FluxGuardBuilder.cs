@@ -16,6 +16,7 @@ public sealed class FluxGuardBuilder
     private readonly FluxGuardOptions _options = new();
     private readonly List<IInputGuard> _inputGuards = [];
     private readonly List<IOutputGuard> _outputGuards = [];
+    private readonly List<IRemoteGuard> _remoteGuards = [];
     private IFluxGuardHooks _hooks = new FluxGuardHooks();
     private ILoggerFactory _loggerFactory = NullLoggerFactory.Instance;
 
@@ -102,6 +103,17 @@ public sealed class FluxGuardBuilder
     }
 
     /// <summary>
+    /// Add L3 remote guard
+    /// </summary>
+    /// <param name="guard">Remote guard</param>
+    /// <returns>Builder instance</returns>
+    public FluxGuardBuilder AddRemoteGuard(IRemoteGuard guard)
+    {
+        _remoteGuards.Add(guard);
+        return this;
+    }
+
+    /// <summary>
     /// Set hooks
     /// </summary>
     /// <param name="hooks">Hooks instance</param>
@@ -174,12 +186,13 @@ public sealed class FluxGuardBuilder
     /// <returns>FluxGuard instance</returns>
     public IFluxGuard Build()
     {
-        return new FluxGuardCore(_options, _inputGuards, _outputGuards, _hooks, _loggerFactory);
+        return new FluxGuardCore(_options, _inputGuards, _outputGuards, _remoteGuards, _hooks, _loggerFactory);
     }
 
     internal FluxGuardOptions GetOptions() => _options;
     internal IReadOnlyList<IInputGuard> GetInputGuards() => _inputGuards;
     internal IReadOnlyList<IOutputGuard> GetOutputGuards() => _outputGuards;
+    internal IReadOnlyList<IRemoteGuard> GetRemoteGuards() => _remoteGuards;
     internal IFluxGuardHooks GetHooks() => _hooks;
     internal ILoggerFactory GetLoggerFactory() => _loggerFactory;
 }

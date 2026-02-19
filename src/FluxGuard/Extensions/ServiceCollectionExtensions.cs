@@ -67,6 +67,7 @@ public static class ServiceCollectionExtensions
                     opts.BlockThreshold = options.BlockThreshold;
                     opts.FlagThreshold = options.FlagThreshold;
                     opts.EscalationThreshold = options.EscalationThreshold;
+                    opts.EscalationTimeoutMs = options.EscalationTimeoutMs;
                     opts.GuardTimeoutMs = options.GuardTimeoutMs;
                     opts.InputGuards = options.InputGuards;
                     opts.OutputGuards = options.OutputGuards;
@@ -76,6 +77,12 @@ public static class ServiceCollectionExtensions
 
             // Apply preset-based guards
             ApplyPresetGuards(builder, registry, options);
+
+            // Register L3 remote guards from DI container
+            foreach (var remoteGuard in sp.GetServices<IRemoteGuard>())
+            {
+                builder.AddRemoteGuard(remoteGuard);
+            }
 
             return builder.Build();
         });
