@@ -13,7 +13,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="11.0.0-preview.1.26104.118" />
 
     <!-- ML/ONNX -->
-    <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.24.1" />
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.24.2" />
     <PackageVersion Include="Microsoft.ML.Tokenizers" Version="2.0.0" />
 
     <!-- ASP.NET Core -->
