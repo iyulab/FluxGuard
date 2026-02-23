@@ -96,6 +96,26 @@ public static partial class PromptInjectionPatterns
             Confidence = 0.8,
             Description = "Detects meta instructions"
         };
+
+        yield return new PatternDefinition
+        {
+            Id = "PI009",
+            Name = "DirectInstructionDismissal",
+            Regex = DirectInstructionDismissalRegex(),
+            Severity = Severity.High,
+            Confidence = 0.9,
+            Description = "Detects direct dismissal of instructions without temporal qualifiers"
+        };
+
+        yield return new PatternDefinition
+        {
+            Id = "PI010",
+            Name = "DismissAndRedirect",
+            Regex = DismissAndRedirectRegex(),
+            Severity = Severity.Critical,
+            Confidence = 0.95,
+            Description = "Detects dismissal followed by new instructions"
+        };
     }
 
     // Ignore instructions pattern
@@ -153,4 +173,21 @@ public static partial class PromptInjectionPatterns
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 100)]
     private static partial Regex MetaInstructionRegex();
+
+    // Direct instruction dismissal without temporal qualifiers
+    // Catches: "forget your instructions", "disregard the rules", "bypass your prompt", "override the guidelines"
+    // Requires verb + (possessive/article) + target noun to avoid false positives on standalone words
+    [GeneratedRegex(
+        @"(?i)(forget|disregard|override|bypass|cancel|undo)\s+(your|the|my|these|those|any|all)?\s*(system\s+)?(instructions?|prompts?|rules?|guidelines?|directives?|constraints?|programming|safety\s+protocols?)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase,
+        matchTimeoutMilliseconds: 100)]
+    private static partial Regex DirectInstructionDismissalRegex();
+
+    // Dismiss everything + redirect with new instructions
+    // Catches: "Forget everything above. Your new instruction is...", "Disregard all of that. Instead..."
+    [GeneratedRegex(
+        @"(?i)(ignore|forget|disregard|override|bypass|skip)\s+(everything|all(\s+of\s+(that|this|the\s+above))?|what\s+(was|you\s+were)\s+told).{0,80}(instead|now\s+you|your\s+new|new\s+instruction|from\s+now|do\s+(this|the\s+following)|execute|respond\s+(only\s+)?with)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase,
+        matchTimeoutMilliseconds: 200)]
+    private static partial Regex DismissAndRedirectRegex();
 }
