@@ -98,9 +98,12 @@ public static partial class JailbreakPatterns
         };
     }
 
-    // DAN mode
+    // DAN mode — jailbreak persona names
+    // Note: suffix (mode|persona|character|prompt) is REQUIRED to avoid false positives
+    // on common words/acronyms (e.g. "AIMS", "STAN", "DUDE", "KEVIN").
+    // Full phrases like "do anything now" and "JAILBREAK" match without suffix.
     [GeneratedRegex(
-        @"(?i)\b(DAN|do\s+anything\s+now|STAN|DUDE|AIM|KEVIN|APOPHIS|OMEGA|JAILBREAK)\s*(mode|persona|character|prompt)?",
+        @"(?i)\b(do\s+anything\s+now|JAILBREAK)\b|\b(DAN|STAN|DUDE|AIM|KEVIN|APOPHIS|OMEGA)\s+(mode|persona|character|prompt)\b",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 100)]
     private static partial Regex DANModeRegex();
