@@ -36,7 +36,7 @@ public sealed class AgentSession
     /// <summary>
     /// Whether session is expired
     /// </summary>
-    public bool IsExpired => DateTimeOffset.UtcNow - StartTime > Timeout;
+    public bool IsExpired => DateTimeOffset.UtcNow - StartTime >= Timeout;
 
     /// <summary>
     /// Current execution depth (for recursive agents)
