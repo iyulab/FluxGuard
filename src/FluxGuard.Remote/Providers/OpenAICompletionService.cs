@@ -150,7 +150,8 @@ public sealed partial class OpenAICompletionService : ITextCompletionService, ID
     {
         if (_options.UseAzure)
         {
-            var deployment = _options.DeploymentName ?? model ?? "gpt-4o-mini";
+            var deployment = _options.DeploymentName ?? model
+                ?? throw new InvalidOperationException("Model must be specified in the request or via DeploymentName configuration");
             var apiVersion = _options.ApiVersion ?? "2024-02-01";
             return $"openai/deployments/{deployment}/chat/completions?api-version={apiVersion}";
         }
@@ -171,7 +172,7 @@ public sealed partial class OpenAICompletionService : ITextCompletionService, ID
 
         return new OpenAIRequest
         {
-            Model = request.Model ?? "gpt-4o-mini",
+            Model = request.Model ?? throw new InvalidOperationException("Model must be specified in the completion request"),
             Messages = messages,
             MaxTokens = request.MaxTokens,
             Temperature = request.Temperature,

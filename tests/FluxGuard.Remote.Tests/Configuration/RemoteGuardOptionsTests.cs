@@ -56,7 +56,7 @@ public class LLMJudgeOptionsTests
     {
         var options = new LLMJudgeOptions();
 
-        options.Model.Should().Be("gpt-4o-mini");
+        options.Model.Should().BeEmpty();
         options.Temperature.Should().Be(0.0);
         options.MaxTokens.Should().Be(256);
         options.BlockThreshold.Should().Be(0.8);

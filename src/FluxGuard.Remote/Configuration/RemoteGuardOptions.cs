@@ -57,9 +57,9 @@ public sealed class RemoteGuardOptions
 public sealed class LLMJudgeOptions
 {
     /// <summary>
-    /// Default model for judge (default: "gpt-4o-mini")
+    /// Model for judge (must be configured explicitly)
     /// </summary>
-    public string Model { get; set; } = "gpt-4o-mini";
+    public string Model { get; set; } = string.Empty;
 
     /// <summary>
     /// Temperature for judge (default: 0.0 for consistency)

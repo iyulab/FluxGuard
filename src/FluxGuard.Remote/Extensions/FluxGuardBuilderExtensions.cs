@@ -70,6 +70,7 @@ public sealed class RemoteGuardConfigurator
     private readonly FluxGuardBuilder _builder;
     private readonly RemoteGuardOptions _options;
     private ILoggerFactory? _loggerFactory;
+    private ITextCompletionService? _completionService;
     private bool _guardsRegistered;
 
     internal RemoteGuardConfigurator(FluxGuardBuilder builder, RemoteGuardOptions options)
@@ -84,7 +85,7 @@ public sealed class RemoteGuardConfigurator
     /// <summary>
     /// Configure judge model
     /// </summary>
-    /// <param name="model">Model name (e.g., "gpt-4o-mini", "gpt-4o")</param>
+    /// <param name="model">Model name (e.g., "gpt-4o-mini", "gpt-4o"). Must be set before building.</param>
     /// <returns>Configurator</returns>
     public RemoteGuardConfigurator WithModel(string model)
     {
@@ -132,6 +133,17 @@ public sealed class RemoteGuardConfigurator
     public RemoteGuardConfigurator WithLogging(ILoggerFactory loggerFactory)
     {
         _loggerFactory = loggerFactory;
+        return this;
+    }
+
+    /// <summary>
+    /// Provide a custom ITextCompletionService implementation
+    /// </summary>
+    /// <param name="completionService">Custom completion service</param>
+    /// <returns>Configurator</returns>
+    public RemoteGuardConfigurator WithCompletionService(ITextCompletionService completionService)
+    {
+        _completionService = completionService;
         return this;
     }
 
@@ -190,9 +202,10 @@ public sealed class RemoteGuardConfigurator
         // Create L3 guard dependencies and register
         var loggerFactory = _loggerFactory ?? NullLoggerFactory.Instance;
         var optionsWrapper = Options.Create(_options);
-        var completionService = new OpenAICompletionService(
-            optionsWrapper,
-            loggerFactory.CreateLogger<OpenAICompletionService>());
+        var completionService = _completionService
+            ?? new OpenAICompletionService(
+                optionsWrapper,
+                loggerFactory.CreateLogger<OpenAICompletionService>());
         var cache = new InMemorySemanticCache(optionsWrapper);
         var judge = new L3LLMJudgeGuard(
             completionService,
