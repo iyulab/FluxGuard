@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FluxGuard\FluxGuard.csproj" />
+    <ProjectReference Include="..\..\src\FluxGuard.SDK\FluxGuard.SDK.csproj" />
   </ItemGroup>
 
 </Project>
