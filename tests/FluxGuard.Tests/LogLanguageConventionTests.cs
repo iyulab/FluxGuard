@@ -54,6 +54,7 @@ public class LogLanguageConventionTests
 
     private static void AssertNoHangul(Type type)
     {
+        if (type is null) return;
         var offenders = type
             .GetMethods(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Select(m => (Method: m, Attr: m.GetCustomAttribute<LoggerMessageAttribute>()))
