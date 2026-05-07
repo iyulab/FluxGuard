@@ -10,6 +10,11 @@ namespace FluxGuard.Tests;
 // Operator log pipelines (grep / Loki / Elastic) and international support require
 // English-only log messages. Korean tokens land as opaque tokens in Latin-tokenized
 // indexes and require UTF-8-aware regex from operators. See CLAUDE.md logging conventions.
+//
+// Note: FluxGuard.SDK (via FluxGuard ref) uses Roslyn source-generated regex types that
+// cause GetTypes() to return null entries on some platforms. [Fact]+loop avoids the
+// xunit.runner.visualstudio "unknown test case" failure that parameterized Theory tests
+// produce when null types reach the test case descriptor pipeline.
 public class LogLanguageConventionTests
 {
     private static readonly Regex HangulRegex = new(@"[가-힣ᄀ-ᇿ㄰-㆏]");
@@ -17,15 +22,6 @@ public class LogLanguageConventionTests
     public static IEnumerable<object[]> FluxGuardAssemblyTypes()
     {
         var assembly = typeof(FluxGuardOptions).Assembly;
-        foreach (var type in SafeGetTypes(assembly).Where(t => !t.IsCompilerGenerated()))
-        {
-            yield return new object[] { type };
-        }
-    }
-
-    public static IEnumerable<object[]> FluxGuardSdkAssemblyTypes()
-    {
-        var assembly = typeof(FluxGuardChatClient).Assembly;
         foreach (var type in SafeGetTypes(assembly).Where(t => !t.IsCompilerGenerated()))
         {
             yield return new object[] { type };
@@ -45,11 +41,22 @@ public class LogLanguageConventionTests
         AssertNoHangul(type);
     }
 
-    [Theory]
-    [MemberData(nameof(FluxGuardSdkAssemblyTypes))]
-    public void FluxGuardSdk_LoggerMessageAttributes_HaveAsciiOnlyMessages(Type type)
+    [Fact]
+    public void FluxGuardSdk_LoggerMessageAttributes_HaveAsciiOnlyMessages()
     {
-        AssertNoHangul(type);
+        var assembly = typeof(FluxGuardChatClient).Assembly;
+        var offenders = SafeGetTypes(assembly)
+            .Where(t => !t.IsCompilerGenerated())
+            .SelectMany(type =>
+                type.GetMethods(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                    .Select(m => (Method: m, Attr: m.GetCustomAttribute<LoggerMessageAttribute>(), Type: type))
+                    .Where(x => x.Attr is not null && !string.IsNullOrEmpty(x.Attr.Message) && HangulRegex.IsMatch(x.Attr.Message))
+                    .Select(x => $"  {type.Name}.{x.Method.Name}: {x.Attr!.Message}"))
+            .ToList();
+
+        Assert.True(offenders.Count == 0,
+            "Found Korean text in [LoggerMessage] attributes — log messages must be English-only:\n"
+            + string.Join("\n", offenders));
     }
 
     private static void AssertNoHangul(Type type)
