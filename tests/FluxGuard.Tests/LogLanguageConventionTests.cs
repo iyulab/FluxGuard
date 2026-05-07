@@ -17,7 +17,7 @@ public class LogLanguageConventionTests
     public static IEnumerable<object[]> FluxGuardAssemblyTypes()
     {
         var assembly = typeof(FluxGuardOptions).Assembly;
-        foreach (var type in SafeGetTypes(assembly).Where(t => !t.IsCompilerGenerated()))
+        foreach (var type in SafeGetTypes(assembly).Where(t => t is not null && !t.IsCompilerGenerated()))
         {
             yield return new object[] { type };
         }
@@ -26,7 +26,7 @@ public class LogLanguageConventionTests
     public static IEnumerable<object[]> FluxGuardSdkAssemblyTypes()
     {
         var assembly = typeof(FluxGuardChatClient).Assembly;
-        foreach (var type in SafeGetTypes(assembly).Where(t => !t.IsCompilerGenerated()))
+        foreach (var type in SafeGetTypes(assembly).Where(t => t is not null && !t.IsCompilerGenerated()))
         {
             yield return new object[] { type };
         }
