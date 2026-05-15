@@ -189,14 +189,27 @@ dotnet add package FluxGuard.Remote
 ```
 
 ```csharp
+// OpenAI — model must be set explicitly (no default since 0.11.0)
 var guard = new FluxGuardBuilder()
-    .WithRemoteGuard(opt =>
-    {
-        opt.CompletionService = myLlmService;
-        opt.EscalationThreshold = 0.7f;  // Escalate to L3 at 70%+ suspicion
-        opt.TimeoutMs = 200;             // Use L2 result on timeout
-    })
+    .WithRemoteGuard("your-openai-api-key")
+    .WithModel("gpt-4o-mini")
+    .WithTimeout(200)             // Use L2 result on timeout
     .Build();
+
+// Bring your own ITextCompletionService
+var guard = new FluxGuardBuilder()
+    .WithRemoteGuard("your-openai-api-key")
+    .WithModel("gpt-4o-mini")
+    .WithCompletionService(myCompletionService)
+    .Build();
+
+// DI (ASP.NET Core) — register remote separately
+services.AddFluxGuard();
+services.AddFluxGuardRemote("your-openai-api-key", opt =>
+{
+    opt.Judge.Model = "gpt-4o-mini";
+    opt.TimeoutMs = 200;
+});
 ```
 
 **Remote provides:**
