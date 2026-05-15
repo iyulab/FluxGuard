@@ -70,7 +70,7 @@ public sealed class RemoteGuardConfigurator
     private readonly FluxGuardBuilder _builder;
     private readonly RemoteGuardOptions _options;
     private ILoggerFactory? _loggerFactory;
-    private ITextCompletionService? _completionService;
+    private IRemoteLlmService? _completionService;
     private bool _guardsRegistered;
 
     internal RemoteGuardConfigurator(FluxGuardBuilder builder, RemoteGuardOptions options)
@@ -137,11 +137,11 @@ public sealed class RemoteGuardConfigurator
     }
 
     /// <summary>
-    /// Provide a custom ITextCompletionService implementation
+    /// Provide a custom IRemoteLlmService implementation
     /// </summary>
     /// <param name="completionService">Custom completion service</param>
     /// <returns>Configurator</returns>
-    public RemoteGuardConfigurator WithCompletionService(ITextCompletionService completionService)
+    public RemoteGuardConfigurator WithCompletionService(IRemoteLlmService completionService)
     {
         _completionService = completionService;
         return this;
@@ -235,7 +235,7 @@ public static class ServiceCollectionExtensions
         services.Configure(configure);
 
         services.AddSingleton<ISemanticCache, InMemorySemanticCache>();
-        services.AddSingleton<ITextCompletionService, OpenAICompletionService>();
+        services.AddSingleton<IRemoteLlmService, OpenAICompletionService>();
         services.AddSingleton<IRemoteGuard, L3LLMJudgeGuard>();
 
         return services;

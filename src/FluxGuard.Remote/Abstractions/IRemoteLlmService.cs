@@ -1,9 +1,9 @@
 namespace FluxGuard.Remote.Abstractions;
 
 /// <summary>
-/// Text completion service abstraction for LLM providers
+/// Remote LLM service abstraction for LLM providers
 /// </summary>
-public interface ITextCompletionService
+public interface IRemoteLlmService
 {
     /// <summary>
     /// Service name (e.g., "OpenAI", "Azure OpenAI")

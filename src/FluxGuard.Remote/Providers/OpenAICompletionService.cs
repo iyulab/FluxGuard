@@ -13,7 +13,7 @@ namespace FluxGuard.Remote.Providers;
 /// <summary>
 /// OpenAI/Azure OpenAI completion service implementation
 /// </summary>
-public sealed partial class OpenAICompletionService : ITextCompletionService, IDisposable
+public sealed partial class OpenAICompletionService : IRemoteLlmService, IDisposable
 {
     private readonly HttpClient _httpClient;
     private readonly OpenAIProviderOptions _options;

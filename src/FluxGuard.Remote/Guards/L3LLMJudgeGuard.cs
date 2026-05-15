@@ -16,7 +16,7 @@ namespace FluxGuard.Remote.Guards;
 /// </summary>
 public sealed partial class L3LLMJudgeGuard : IRemoteGuard
 {
-    private readonly ITextCompletionService _completionService;
+    private readonly IRemoteLlmService _completionService;
     private readonly ISemanticCache _cache;
     private readonly LLMJudgeOptions _options;
     private readonly ILogger<L3LLMJudgeGuard> _logger;
@@ -41,7 +41,7 @@ public sealed partial class L3LLMJudgeGuard : IRemoteGuard
     /// Create L3 LLM Judge guard
     /// </summary>
     public L3LLMJudgeGuard(
-        ITextCompletionService completionService,
+        IRemoteLlmService completionService,
         ISemanticCache cache,
         IOptions<RemoteGuardOptions> options,
         ILogger<L3LLMJudgeGuard> logger)

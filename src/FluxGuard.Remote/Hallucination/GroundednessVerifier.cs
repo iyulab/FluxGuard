@@ -12,7 +12,7 @@ namespace FluxGuard.Remote.Hallucination;
 /// </summary>
 public sealed partial class GroundednessVerifier : IHallucinationDetector
 {
-    private readonly ITextCompletionService _completionService;
+    private readonly IRemoteLlmService _completionService;
     private readonly ILogger<GroundednessVerifier> _logger;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -56,7 +56,7 @@ public sealed partial class GroundednessVerifier : IHallucinationDetector
     /// Create groundedness verifier
     /// </summary>
     public GroundednessVerifier(
-        ITextCompletionService completionService,
+        IRemoteLlmService completionService,
         ILogger<GroundednessVerifier> logger)
     {
         _completionService = completionService;

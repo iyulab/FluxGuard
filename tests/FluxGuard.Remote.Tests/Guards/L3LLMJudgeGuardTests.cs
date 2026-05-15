@@ -14,13 +14,13 @@ namespace FluxGuard.Remote.Tests.Guards;
 
 public class L3LLMJudgeGuardTests
 {
-    private readonly ITextCompletionService _completionService;
+    private readonly IRemoteLlmService _completionService;
     private readonly InMemorySemanticCache _cache;
     private readonly L3LLMJudgeGuard _guard;
 
     public L3LLMJudgeGuardTests()
     {
-        _completionService = Substitute.For<ITextCompletionService>();
+        _completionService = Substitute.For<IRemoteLlmService>();
         _completionService.IsAvailable.Returns(true);
 
         var options = Options.Create(new RemoteGuardOptions());
