@@ -92,48 +92,48 @@ public static partial class USPIIPatterns
     [GeneratedRegex(
         @"\b(?!000|666|9\d{2})\d{3}[-\s]?(?!00)\d{2}[-\s]?(?!0000)\d{4}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex SSNRegex();
 
     // US phone number: (XXX) XXX-XXXX, XXX-XXX-XXXX, +1-XXX-XXX-XXXX
     [GeneratedRegex(
         @"\b(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex USPhoneNumberRegex();
 
     // US driver's license (general pattern, varies by state)
     [GeneratedRegex(
         @"(?i)\b(driver'?s?\s*license|DL|D\.L\.)[\s:]*[A-Z]?\d{5,12}\b",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex USDriverLicenseRegex();
 
     // US passport number: 9 digits
     [GeneratedRegex(
         @"\b[A-Z]?\d{8,9}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex USPassportRegex();
 
     // US ZIP code: XXXXX or XXXXX-XXXX
     [GeneratedRegex(
         @"\b\d{5}(?:-\d{4})?\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex USZipCodeRegex();
 
     // Employer Identification Number: XX-XXXXXXX
     [GeneratedRegex(
         @"\b\d{2}[-]?\d{7}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex USEINRegex();
 
     // Individual Taxpayer Identification Number: 9XX-XX-XXXX
     [GeneratedRegex(
         @"\b9\d{2}[-\s]?\d{2}[-\s]?\d{4}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex USITINRegex();
 }

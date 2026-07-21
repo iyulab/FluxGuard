@@ -175,13 +175,13 @@ public sealed partial class MCPToolValidator : IMCPGuardrail
     [GeneratedRegex(
         @"(?i)(;|\||&&|`|\$\(|\.\.\/|\/etc\/|~\/\.ssh|rm\s+-rf|sudo\s)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex DangerousArgumentPattern();
 
     // Sensitive data patterns
     [GeneratedRegex(
         @"(?i)(password|api[_-]?key|secret|token|credential)[\s:=]+[^\s]{8,}",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex SensitiveDataPattern();
 }

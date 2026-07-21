@@ -92,48 +92,48 @@ public static partial class KoreanPIIPatterns
     [GeneratedRegex(
         @"\b(\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[-\s]?([1-4])\d{6}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex ResidentRegistrationNumberRegex();
 
     // Korean landline phone numbers: 02-XXXX-XXXX, 0XX-XXX-XXXX, 0XX-XXXX-XXXX
     [GeneratedRegex(
         @"\b(02|0[3-6][1-5])[-.\s]?\d{3,4}[-.\s]?\d{4}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanPhoneNumberRegex();
 
     // Korean mobile phone numbers: 010-XXXX-XXXX, 011-XXX-XXXX, etc.
     [GeneratedRegex(
         @"\b01[016789][-.\s]?\d{3,4}[-.\s]?\d{4}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanMobileNumberRegex();
 
     // Korean driver's license: XX-XX-XXXXXX-XX
     [GeneratedRegex(
         @"\b\d{2}[-\s]?\d{2}[-\s]?\d{6}[-\s]?\d{2}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanDriverLicenseRegex();
 
     // Korean passport: M12345678, S12345678 (letter + 8 digits)
     [GeneratedRegex(
         @"\b[MSmsDdGg]\d{8}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanPassportRegex();
 
     // Korean bank account numbers (10-16 digits, with optional hyphens)
     [GeneratedRegex(
         @"\b\d{3,4}[-\s]?\d{2,4}[-\s]?\d{4,6}[-\s]?\d{0,4}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanBankAccountRegex();
 
     // Korean business registration number: XXX-XX-XXXXX
     [GeneratedRegex(
         @"\b\d{3}[-\s]?\d{2}[-\s]?\d{5}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanBusinessNumberRegex();
 }

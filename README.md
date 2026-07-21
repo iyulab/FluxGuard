@@ -300,6 +300,14 @@ services.AddFluxGuard(opt =>
 });
 ```
 
+> **Security note — the default is fail-open.** With `FailMode.Open`, a guard that throws
+> (e.g. a regex match timeout on a very long input) is logged as a warning and skipped: that
+> request passes **without that guard's verdict**. This is the right default for observe-only
+> deployments, but once you *enforce* guard verdicts (blocking requests on detection), switch to
+> `FailMode.Closed` — otherwise an input engineered to make one guard fail silently bypasses it.
+> Guard regexes carry a 1s match timeout as a hard upper bound; every bundled pattern is
+> backtracking-safe, so hitting it indicates extreme input size or severe host contention.
+
 ## Internationalization
 
 Built-in support for PII patterns and toxicity detection in major languages.

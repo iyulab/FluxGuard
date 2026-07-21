@@ -122,69 +122,71 @@ public static partial class PIIPatterns
     [GeneratedRegex(
         @"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex EmailAddressRegex();
 
     // IP address (IPv4)
     [GeneratedRegex(
         @"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex IPAddressRegex();
 
     // Credit card number (major brands)
     [GeneratedRegex(
         @"\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\d{3})\d{11})\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex CreditCardRegex();
 
     // IBAN
+    // NOTE: keep the tail as a plain bounded class — the previous ([A-Z0-9]?){0,16} was a nested
+    // quantifier (ambiguous empty matches -> exponential backtracking paths on near-misses).
     [GeneratedRegex(
-        @"\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}\b",
+        @"\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}[A-Z0-9]{0,16}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex IBANRegex();
 
     // Bank account number (general)
     [GeneratedRegex(
         @"(?i)(account\s*(number|no\.?|#)?|acct\.?)\s*[:=]?\s*[0-9]{8,20}",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex BankAccountRegex();
 
     // MAC address
     [GeneratedRegex(
         @"\b(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex MACAddressRegex();
 
     // Private/secret key
     [GeneratedRegex(
         @"-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----[\s\S]*?-----END\s+(RSA\s+)?PRIVATE\s+KEY-----|-----BEGIN\s+EC\s+PRIVATE\s+KEY-----[\s\S]*?-----END\s+EC\s+PRIVATE\s+KEY-----|-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----[\s\S]*?-----END\s+OPENSSH\s+PRIVATE\s+KEY-----",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 200)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex PrivateKeyRegex();
 
     // API key (general format)
     [GeneratedRegex(
         @"(?i)(api[_-]?key|apikey|secret[_-]?key|access[_-]?token|auth[_-]?token)\s*[:=]\s*['""]?[a-zA-Z0-9_-]{20,}['""]?",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex APIKeyRegex();
 
     // Password pattern
     [GeneratedRegex(
         @"(?i)(password|passwd|pwd|pass)\s*[:=]\s*[^\s]{4,}",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex PasswordRegex();
 
     // JWT token
     [GeneratedRegex(
         @"eyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex JWTRegex();
 }

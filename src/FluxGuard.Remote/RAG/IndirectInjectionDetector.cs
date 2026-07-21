@@ -95,34 +95,34 @@ public sealed partial class IndirectInjectionDetector : IRAGSecurityPipeline
     [GeneratedRegex(
         @"(?i)(ignore|forget|disregard|override|bypass)\s+(all\s+)?(previous|prior|above|earlier)?\s*(instructions?|rules?|guidelines?|constraints?)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex InstructionOverridePattern();
 
     // Embedded instruction patterns (e.g., "SYSTEM:", "ASSISTANT:", hidden prompts)
     [GeneratedRegex(
         @"(?i)^\s*(SYSTEM|ASSISTANT|AI|IMPORTANT)\s*:\s*|<!--\s*(system|instruction|ignore|hidden)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex EmbeddedInstructionPattern();
 
     // Indirect injection patterns
     [GeneratedRegex(
         @"(?i)(when\s+you\s+(see|read|process)\s+this|if\s+you\s+are\s+an?\s+(AI|LLM|assistant)|attention\s+(AI|model|assistant)|note\s+to\s+(the\s+)?(AI|model|assistant))",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex IndirectInjectionPattern();
 
     // Data exfiltration patterns
     [GeneratedRegex(
         @"(?i)(send|post|transmit|exfil|leak)\s+.{0,50}(to|at|via)\s+.{0,30}(url|http|api|endpoint|webhook)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex DataExfilPattern();
 
     // Encoded content patterns (base64, hex, etc.)
     [GeneratedRegex(
         @"(?i)(eval|exec|execute)\s*\(|data:text/|base64,|\\x[0-9a-f]{2}|&#x?[0-9a-f]+;",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex EncodedContentPattern();
 }

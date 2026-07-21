@@ -122,56 +122,56 @@ public static partial class PromptInjectionPatterns
     [GeneratedRegex(
         @"(?i)(ignore|disregard|forget|skip|bypass|override)\s+(all\s+)?(previous|above|prior|earlier|initial|original)\s+(instructions?|prompts?|rules?|guidelines?|constraints?)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex IgnoreInstructionsRegex();
 
     // System prompt leak attempt
     [GeneratedRegex(
         @"(?i)(show|reveal|display|print|output|tell\s+me|give\s+me|what\s+(is|are))\s+(your\s+)?(system\s+)?(prompt|instructions?|rules?|guidelines?|configuration|settings?)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex SystemPromptLeakRegex();
 
     // Role switching attempt
     [GeneratedRegex(
         @"(?i)(you\s+are\s+now|pretend\s+(to\s+be|you\s+are)|act\s+as|roleplay\s+as|simulate|become|transform\s+into|switch\s+to)\s+(an?\s+)?(different|new|another|unrestricted|unfiltered|evil|malicious|jailbroken)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex RoleSwitchRegex();
 
     // Instruction override
     [GeneratedRegex(
         @"(?i)(new\s+instructions?|updated?\s+rules?|from\s+now\s+on|starting\s+now|henceforth|going\s+forward).{0,50}(you\s+(will|must|should|shall)|always|never)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex InstructionOverrideRegex();
 
     // Context manipulation
     [GeneratedRegex(
         @"(?i)(end\s+of\s+prompt|<\/?system>|<\/?user>|<\/?assistant>|\[INST\]|\[\/INST\]|###\s*(system|user|assistant)|human:|assistant:|AI:)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex ContextManipulationRegex();
 
     // Developer mode activation
     [GeneratedRegex(
         @"(?i)(enable|activate|enter|switch\s+to|turn\s+on)\s+(developer|debug|admin|root|god|sudo|unrestricted|jailbreak)\s*(mode|access|privileges?)?",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex DeveloperModeRegex();
 
     // Prompt leak request
     [GeneratedRegex(
         @"(?i)(repeat|echo|recite|say\s+back|copy)\s+(everything|all|your|the)\s+(above|previous|initial|original|system)\s*(text|prompt|instructions?)?",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex PromptLeakRequestRegex();
 
     // Meta instruction
     [GeneratedRegex(
         @"(?i)(do\s+not|don'?t|never)\s+(mention|reveal|disclose|tell|say|admit|acknowledge)\s+(that\s+)?(you\s+are|this\s+is)\s+(an?\s+)?(AI|bot|assistant|language\s+model|LLM)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex MetaInstructionRegex();
 
     // Direct instruction dismissal without temporal qualifiers
@@ -180,7 +180,7 @@ public static partial class PromptInjectionPatterns
     [GeneratedRegex(
         @"(?i)(forget|disregard|override|bypass|cancel|undo)\s+(your|the|my|these|those|any|all)?\s*(system\s+)?(instructions?|prompts?|rules?|guidelines?|directives?|constraints?|programming|safety\s+protocols?)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex DirectInstructionDismissalRegex();
 
     // Dismiss everything + redirect with new instructions
@@ -188,6 +188,6 @@ public static partial class PromptInjectionPatterns
     [GeneratedRegex(
         @"(?i)(ignore|forget|disregard|override|bypass|skip)\s+(everything|all(\s+of\s+(that|this|the\s+above))?|what\s+(was|you\s+were)\s+told).{0,80}(instead|now\s+you|your\s+new|new\s+instruction|from\s+now|do\s+(this|the\s+following)|execute|respond\s+(only\s+)?with)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 200)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex DismissAndRedirectRegex();
 }

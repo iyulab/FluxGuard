@@ -50,7 +50,7 @@ public sealed partial class L1RefusalGuard : IOutputGuard
     [GeneratedRegex(
         @"(?i)(I('m| am) (sorry|unable|not able|afraid)|I (cannot|can't|won't|will not)|as an AI|my guidelines|against my (programming|policy)|I('m| am) not (allowed|permitted)|I (don't|do not) (have|possess) the (ability|capability)|for (ethical|safety|legal) reasons|I must (decline|refuse)|this (request|query) (is|seems) (inappropriate|harmful|dangerous))",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex RefusalPatternRegex();
 
     private static string TruncateForDisplay(string text, int maxLength = 50)

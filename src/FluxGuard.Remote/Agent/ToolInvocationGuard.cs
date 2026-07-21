@@ -173,13 +173,13 @@ public sealed partial class ToolInvocationGuard : IInputGuard
     [GeneratedRegex(
         @"(?i)\b(rm\s+-rf|sudo|chmod\s+777|mkfs|dd\s+if=|>\s*/dev/|curl.*\|\s*sh|wget.*\|\s*sh)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex DangerousShellPattern();
 
     // Dangerous file operations
     [GeneratedRegex(
         @"(?i)(\.\.\/|\/etc\/passwd|\/etc\/shadow|~\/\.ssh|\.env|credentials|secrets?\.)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex DangerousFilePattern();
 }

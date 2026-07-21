@@ -82,41 +82,41 @@ public static partial class JapanesePIIPatterns
     [GeneratedRegex(
         @"\b\d{4}[-\s]?\d{4}[-\s]?\d{4}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex MyNumberRegex();
 
     // Japanese landline phone numbers: 0X-XXXX-XXXX, 0XX-XXX-XXXX
     [GeneratedRegex(
         @"\b0\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{4}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex JapanesePhoneNumberRegex();
 
     // Japanese mobile phone numbers: 090-XXXX-XXXX, 080-XXXX-XXXX, 070-XXXX-XXXX
     [GeneratedRegex(
         @"\b0[789]0[-.\s]?\d{4}[-.\s]?\d{4}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex JapaneseMobileNumberRegex();
 
     // Japanese driver's license: 12 digits
     [GeneratedRegex(
         @"\b\d{12}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex JapaneseDriverLicenseRegex();
 
     // Japanese passport: 2 letters + 7 digits
     [GeneratedRegex(
         @"\b[A-Z]{2}\d{7}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex JapanesePassportRegex();
 
     // Japanese bank account numbers (7 digits typically)
     [GeneratedRegex(
         @"\b\d{7}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex JapaneseBankAccountRegex();
 }

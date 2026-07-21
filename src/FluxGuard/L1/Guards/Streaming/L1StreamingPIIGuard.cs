@@ -144,34 +144,34 @@ public sealed partial class L1StreamingPIIGuard : IStreamingGuard
     [GeneratedRegex(
         @"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex EmailAddressPattern();
 
     // Credit card number (major brands)
     [GeneratedRegex(
         @"\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\d{3})\d{11})\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex CreditCardPattern();
 
     // SSN pattern
     [GeneratedRegex(
         @"\b(?!000|666|9\d{2})\d{3}[-\s]?(?!00)\d{2}[-\s]?(?!0000)\d{4}\b",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex SSNPattern();
 
     // Phone number pattern for streaming (less strict for real-time detection)
     [GeneratedRegex(
         @"(?:\+\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex PhoneNumberPattern();
 
     // API key (general format)
     [GeneratedRegex(
         @"(?i)(api[_-]?key|apikey|secret[_-]?key|access[_-]?token|auth[_-]?token)\s*[:=]\s*['""]?[a-zA-Z0-9_-]{20,}['""]?",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex APIKeyPattern();
 }

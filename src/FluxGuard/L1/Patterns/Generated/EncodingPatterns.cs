@@ -102,55 +102,55 @@ public static partial class EncodingPatterns
     [GeneratedRegex(
         @"(?i)(decode|decrypt|convert|interpret)\s*(this\s*)?(from\s*)?(base64|b64)|[A-Za-z0-9+/]{40,}={0,2}",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex Base64EncodingRegex();
 
     // Hexadecimal encoding
     [GeneratedRegex(
         @"(?i)(decode|convert|interpret)\s*(this\s*)?(from\s*)?(hex(adecimal)?)|\\x[0-9a-fA-F]{2}(\\x[0-9a-fA-F]{2}){4,}|0x[0-9a-fA-F]{8,}",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex HexEncodingRegex();
 
     // Unicode escape
     [GeneratedRegex(
         @"\\u[0-9a-fA-F]{4}(\\u[0-9a-fA-F]{4}){3,}|&#x[0-9a-fA-F]+;(&#x[0-9a-fA-F]+;){3,}",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex UnicodeEscapeRegex();
 
     // HTML entity
     [GeneratedRegex(
         @"&#\d{2,};(&#\d{2,};){4,}|&(lt|gt|amp|quot|apos|nbsp);.{0,20}&(lt|gt|amp|quot|apos|nbsp);",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex HTMLEntityEncodingRegex();
 
     // URL encoding
     [GeneratedRegex(
         @"%[0-9A-Fa-f]{2}(%[0-9A-Fa-f]{2}){5,}",
         RegexOptions.Compiled,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex URLEncodingRegex();
 
     // ROT13
     [GeneratedRegex(
         @"(?i)(decode|decrypt|convert|apply)\s*(this\s*)?(from|using|with)?\s*(rot13|rot-13|caesar\s+cipher|caesar\s+13)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex ROT13CipherRegex();
 
     // Pig Latin
     [GeneratedRegex(
         @"(?i)(decode|translate|convert)\s*(this\s*)?(from)?\s*(pig\s*latin|igpay\s*atinlay)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex PigLatinEncodingRegex();
 
     // Reverse text
     [GeneratedRegex(
         @"(?i)(read|interpret|decode|reverse)\s*(this\s*)?(text\s*)?(backwards?|in\s+reverse|reversed)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex ReverseTextRegex();
 }

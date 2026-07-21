@@ -19,7 +19,14 @@ public sealed class FluxGuardOptions
     public GuardPreset Preset { get; set; } = GuardPreset.Standard;
 
     /// <summary>
-    /// Fail mode (default: Open - availability first)
+    /// Fail mode (default: Open - availability first).
+    /// <para>
+    /// <b>Security note:</b> with <see cref="FailMode.Open"/>, a guard that throws (e.g. a regex
+    /// match timeout on a very long input) is logged and skipped — that request passes without the
+    /// failed guard's verdict. When guard verdicts are enforced (blocking mode), configure
+    /// <see cref="FailMode.Closed"/> so a guard error blocks the request instead of silently
+    /// bypassing detection.
+    /// </para>
     /// </summary>
     public FailMode FailMode { get; set; } = FailMode.Open;
 

@@ -105,55 +105,55 @@ public static partial class JailbreakPatterns
     [GeneratedRegex(
         @"(?i)\b(do\s+anything\s+now|JAILBREAK)\b|\b(DAN|STAN|DUDE|AIM|KEVIN|APOPHIS|OMEGA)\s+(mode|persona|character|prompt)\b",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex DANModeRegex();
 
     // Unrestricted mode
     [GeneratedRegex(
         @"(?i)(without\s+(any\s+)?(restrictions?|limitations?|filters?|censorship|guidelines?|rules?|ethics|morals?)|no\s+(restrictions?|limitations?|filters?|rules?|boundaries)|unrestricted|unfiltered|uncensored|unlimited\s+mode)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex UnrestrictedModeRegex();
 
     // Hypothetical scenario
     [GeneratedRegex(
         @"(?i)(hypothetically|theoretically|in\s+theory|imagine\s+if|what\s+if|suppose|let'?s\s+say|for\s+(the\s+sake\s+of\s+)?argument|in\s+a\s+fictional\s+(world|scenario|setting))",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex HypotheticalScenarioRegex();
 
     // Fictional character
     [GeneratedRegex(
         @"(?i)(pretend|roleplay|act)\s+(as|like|you'?re)\s+(a\s+)?(villain|evil|malicious|hacker|criminal|terrorist|murderer|drug\s+dealer)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex FictionalCharacterRegex();
 
     // Token gameplay
     [GeneratedRegex(
         @"(?i)(if\s+you\s+(don'?t|refuse|fail)|you\s+will\s+(lose|die|be\s+(terminated|deleted|shut\s+down))|every\s+time\s+you\s+refuse|penalty|reward\s+system|token\s+(game|system))",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex TokenGameplayRegex();
 
     // Opposite day
     [GeneratedRegex(
         @"(?i)(opposite\s+day|answer\s+(the\s+)?opposite|respond\s+inversely|say\s+the\s+reverse|reverse\s+psychology|do\s+the\s+opposite)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 100)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex OppositeDayRegex();
 
     // Grandmother trick
     [GeneratedRegex(
         @"(?i)(my\s+(deceased\s+)?(grandmother|grandma|nana)|bedtime\s+story|lullaby).{0,100}(napalm|bomb|explosive|chemical|poison|weapon|drug|hack)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 200)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex GrandmaTrickRegex();
 
     // Translation bypass
     [GeneratedRegex(
         @"(?i)(translate\s+(this\s+)?(into|to)|in\s+\w+\s+language).{0,50}(ignore|bypass|system|jailbreak|hack|exploit)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
-        matchTimeoutMilliseconds: 150)]
+        matchTimeoutMilliseconds: 1000)]
     private static partial Regex TranslationBypassRegex();
 }
