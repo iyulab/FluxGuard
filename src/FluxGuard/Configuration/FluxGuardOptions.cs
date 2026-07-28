@@ -100,4 +100,29 @@ public sealed class FluxGuardOptions
     /// Output guard options
     /// </summary>
     public OutputGuardOptions OutputGuards { get; set; } = new();
+
+    /// <summary>
+    /// Copies this configuration onto <paramref name="target"/>.
+    /// Used when options resolved from DI are handed to a builder.
+    /// </summary>
+    internal void CopyTo(FluxGuardOptions target)
+    {
+        target.Preset = Preset;
+        // Copy only an explicit fail mode — an unset one must stay unset so it keeps resolving
+        // from the preset on the other side of this hop.
+        if (IsFailModeExplicitlySet)
+        {
+            target.FailMode = FailMode;
+        }
+        target.LogLevel = LogLevel;
+        target.EnableL2Guards = EnableL2Guards;
+        target.EnableL3Escalation = EnableL3Escalation;
+        target.BlockThreshold = BlockThreshold;
+        target.FlagThreshold = FlagThreshold;
+        target.EscalationThreshold = EscalationThreshold;
+        target.EscalationTimeoutMs = EscalationTimeoutMs;
+        target.GuardTimeoutMs = GuardTimeoutMs;
+        target.InputGuards = InputGuards;
+        target.OutputGuards = OutputGuards;
+    }
 }

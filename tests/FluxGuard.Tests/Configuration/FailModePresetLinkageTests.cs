@@ -105,4 +105,30 @@ public class FailModePresetLinkageTests
 
         options.FailMode.Should().Be(explicitMode);
     }
+
+    // --- DI hop: options resolved from the container are copied onto a builder --------
+
+    [Fact]
+    public void CopyTo_LeavesAnUnsetFailModeUnset()
+    {
+        var source = new FluxGuardOptions { Preset = GuardPreset.Standard };
+        var target = new FluxGuardOptions();
+
+        source.CopyTo(target);
+        target.Preset = GuardPreset.Strict;
+
+        target.FailMode.Should().Be(FailMode.Closed,
+            "an unset fail mode must survive the copy as unset, so it still resolves from the preset");
+    }
+
+    [Fact]
+    public void CopyTo_CarriesAnExplicitFailMode()
+    {
+        var source = new FluxGuardOptions { Preset = GuardPreset.Strict, FailMode = FailMode.Open };
+        var target = new FluxGuardOptions();
+
+        source.CopyTo(target);
+
+        target.FailMode.Should().Be(FailMode.Open);
+    }
 }

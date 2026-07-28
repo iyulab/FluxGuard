@@ -57,26 +57,7 @@ public static class ServiceCollectionExtensions
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
 
             var builder = FluxGuardBuilder.Create()
-                .Configure(opts =>
-                {
-                    opts.Preset = options.Preset;
-                    // Copy only an explicit fail mode — an unset one must stay unset so it keeps
-                    // resolving from the preset after this hop.
-                    if (options.IsFailModeExplicitlySet)
-                    {
-                        opts.FailMode = options.FailMode;
-                    }
-                    opts.LogLevel = options.LogLevel;
-                    opts.EnableL2Guards = options.EnableL2Guards;
-                    opts.EnableL3Escalation = options.EnableL3Escalation;
-                    opts.BlockThreshold = options.BlockThreshold;
-                    opts.FlagThreshold = options.FlagThreshold;
-                    opts.EscalationThreshold = options.EscalationThreshold;
-                    opts.EscalationTimeoutMs = options.EscalationTimeoutMs;
-                    opts.GuardTimeoutMs = options.GuardTimeoutMs;
-                    opts.InputGuards = options.InputGuards;
-                    opts.OutputGuards = options.OutputGuards;
-                })
+                .Configure(options.CopyTo)
                 .WithHooks(hooks)
                 .WithLogging(loggerFactory);
 

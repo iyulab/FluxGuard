@@ -15,4 +15,8 @@
     <PackageReference Include="Microsoft.ML.Tokenizers" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="FluxGuard.Tests" />
+  </ItemGroup>
+
 </Project>
