@@ -175,7 +175,7 @@ services.AddFluxGuard();
 // Custom configuration
 services.AddFluxGuard(opt =>
 {
-    opt.FailMode = FailMode.Open;  // default
+    opt.FailMode = FailMode.Open;  // default for Minimal/Standard; Strict defaults to Closed
     opt.LogLevel = GuardLogLevel.Warning;  // log blocks/errors only
 });
 ```
@@ -288,7 +288,7 @@ var guard = new FluxGuardBuilder()
 services.AddFluxGuard(opt =>
 {
     // Behavior on guard execution error
-    opt.FailMode = FailMode.Open;   // Pass (default, availability priority)
+    opt.FailMode = FailMode.Open;   // Pass (availability priority)
     opt.FailMode = FailMode.Closed; // Block (security priority)
 
     // Or fine-grained control with hooks
@@ -300,13 +300,30 @@ services.AddFluxGuard(opt =>
 });
 ```
 
-> **Security note — the default is fail-open.** With `FailMode.Open`, a guard that throws
-> (e.g. a regex match timeout on a very long input) is logged as a warning and skipped: that
-> request passes **without that guard's verdict**. This is the right default for observe-only
-> deployments, but once you *enforce* guard verdicts (blocking requests on detection), switch to
-> `FailMode.Closed` — otherwise an input engineered to make one guard fail silently bypasses it.
-> Guard regexes carry a 1s match timeout as a hard upper bound; every bundled pattern is
-> backtracking-safe, so hitting it indicates extreme input size or severe host contention.
+**When you don't set `FailMode`, it is derived from the preset** (since 0.12.0):
+
+| Preset | Fail mode when unset |
+|---|---|
+| `Minimal` | `Open` |
+| `Standard` (default) | `Open` |
+| `Strict` | **`Closed`** |
+
+Choosing `Strict` states "security over availability", so the fail mode follows that intent.
+An explicit assignment always wins, in either direction and whatever order it is set in:
+
+```csharp
+// Strict, but keep availability first
+FluxGuard.Create(b => b.WithPreset(GuardPreset.Strict).WithFailMode(FailMode.Open));
+```
+
+> **Security note — outside `Strict`, the default is fail-open.** With `FailMode.Open`, a guard
+> that throws (e.g. a regex match timeout on a very long input) is logged as a warning and
+> skipped: that request passes **without that guard's verdict**. This is the right default for
+> observe-only deployments, but once you *enforce* guard verdicts (blocking requests on
+> detection), use `Strict` or set `FailMode.Closed` — otherwise an input engineered to make one
+> guard fail silently bypasses it. Guard regexes carry a 1s match timeout as a hard upper bound;
+> every bundled pattern is backtracking-safe, so hitting it indicates extreme input size or
+> severe host contention.
 
 ## Internationalization
 

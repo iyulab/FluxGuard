@@ -645,7 +645,7 @@ public static class FluxGuard
 {
     /// <summary>
     /// Create FluxGuard instance with default settings
-    /// Standard preset, FailMode.Open
+    /// Standard preset, which resolves FailMode to Open
     /// </summary>
     /// <returns>FluxGuard instance</returns>
     public static IFluxGuard Create()

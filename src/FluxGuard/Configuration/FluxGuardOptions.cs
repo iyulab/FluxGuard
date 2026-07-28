@@ -19,7 +19,10 @@ public sealed class FluxGuardOptions
     public GuardPreset Preset { get; set; } = GuardPreset.Standard;
 
     /// <summary>
-    /// Fail mode (default: Open - availability first).
+    /// Fail mode. When left unset, it is derived from <see cref="Preset"/>:
+    /// <see cref="GuardPreset.Strict"/> resolves to <see cref="FailMode.Closed"/>,
+    /// every other preset to <see cref="FailMode.Open"/> (availability first).
+    /// Assigning this property always wins, whichever order it is set in.
     /// <para>
     /// <b>Security note:</b> with <see cref="FailMode.Open"/>, a guard that throws (e.g. a regex
     /// match timeout on a very long input) is logged and skipped — that request passes without the
@@ -28,7 +31,25 @@ public sealed class FluxGuardOptions
     /// bypassing detection.
     /// </para>
     /// </summary>
-    public FailMode FailMode { get; set; } = FailMode.Open;
+    public FailMode FailMode
+    {
+        get => _failMode ?? DefaultFailModeFor(Preset);
+        set => _failMode = value;
+    }
+
+    private FailMode? _failMode;
+
+    /// <summary>
+    /// Whether <see cref="FailMode"/> was assigned explicitly rather than derived from the preset.
+    /// </summary>
+    internal bool IsFailModeExplicitlySet => _failMode.HasValue;
+
+    /// <summary>
+    /// Choosing <see cref="GuardPreset.Strict"/> states "security over availability"; the fail mode
+    /// follows that intent unless the consumer says otherwise.
+    /// </summary>
+    private static FailMode DefaultFailModeFor(GuardPreset preset)
+        => preset == GuardPreset.Strict ? FailMode.Closed : FailMode.Open;
 
     /// <summary>
     /// Log level (default: Warning - blocks/errors only)

@@ -20,6 +20,10 @@ public enum GuardPreset
     /// <summary>
     /// Strict configuration - L1 + L2 + enhanced thresholds
     /// Latency 10-30ms, Throughput 3K req/s
+    /// <para>
+    /// Selecting this preset also makes a guard error <b>block</b> the request
+    /// (fail-closed) unless <c>FailMode</c> is set explicitly.
+    /// </para>
     /// </summary>
     Strict
 }

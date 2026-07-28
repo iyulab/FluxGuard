@@ -60,7 +60,12 @@ public static class ServiceCollectionExtensions
                 .Configure(opts =>
                 {
                     opts.Preset = options.Preset;
-                    opts.FailMode = options.FailMode;
+                    // Copy only an explicit fail mode — an unset one must stay unset so it keeps
+                    // resolving from the preset after this hop.
+                    if (options.IsFailModeExplicitlySet)
+                    {
+                        opts.FailMode = options.FailMode;
+                    }
                     opts.LogLevel = options.LogLevel;
                     opts.EnableL2Guards = options.EnableL2Guards;
                     opts.EnableL3Escalation = options.EnableL3Escalation;
