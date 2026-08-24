@@ -110,12 +110,29 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
 
+      # Pack every packable project in the solution, not just the three named today. Naming individual
+      # csproj files here is the same defect class that left FluxImprover.LMSupply and
+      # FileFlux.Providers.LMSupply unpublished at every version until someone noticed (see
+      # iyulab/FluxImprover@4f01b46, iyulab/FileFlux nuget-publish.yml) — a package that is never
+      # produced cannot fail to push, so the gap stays invisible until someone looks for it on
+      # NuGet.org. Packing the solution plus a verification step closes it for any future addition.
       - name: Pack
         if: steps.changed.outputs.changed == 'true'
+        run: dotnet pack FluxGuard.slnx --configuration Release --output ./artifacts -p:TreatWarningsAsErrors=false
+
+      - name: Verify all packable projects were produced
+        if: steps.changed.outputs.changed == 'true'
         run: |
-          dotnet pack src/FluxGuard/FluxGuard.csproj --configuration Release --output ./artifacts -p:TreatWarningsAsErrors=false
-          dotnet pack src/FluxGuard.Remote/FluxGuard.Remote.csproj --configuration Release --output ./artifacts -p:TreatWarningsAsErrors=false
-          dotnet pack src/FluxGuard.SDK/FluxGuard.SDK.csproj --configuration Release --output ./artifacts -p:TreatWarningsAsErrors=false
+          version="${{ steps.version.outputs.VERSION }}"
+          missing=0
+          for csproj in $(grep -oP '(?<=Path=")src/[^"]+\.csproj' FluxGuard.slnx); do
+            id=$(grep -oP '(?<=<PackageId>)[^<]+' "$csproj")
+            if [ ! -f "./artifacts/${id}.${version}.nupkg" ]; then
+              echo "::error::${id}.${version}.nupkg was not produced"
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ]
 
       - name: Push to NuGet
         if: steps.changed.outputs.changed == 'true'
