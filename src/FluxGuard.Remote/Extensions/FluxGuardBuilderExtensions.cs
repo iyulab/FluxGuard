@@ -3,7 +3,9 @@ using FluxGuard.Remote.Abstractions;
 using FluxGuard.Remote.Caching;
 using FluxGuard.Remote.Configuration;
 using FluxGuard.Remote.Guards;
+using FluxGuard.Remote.MCP;
 using FluxGuard.Remote.Providers;
+using FluxGuard.Remote.RAG;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -258,5 +260,32 @@ public static class ServiceCollectionExtensions
             options.OpenAI.ApiKey = apiKey;
             configure?.Invoke(options);
         });
+    }
+
+    /// <summary>
+    /// Add the RAG security pipeline (indirect prompt injection detection for retrieved/ingested
+    /// documents). Opt-in: register this only if the consuming application wants poisoning
+    /// detection applied to its RAG content — nothing else in FluxGuard.Remote requires it.
+    /// </summary>
+    /// <param name="services">Service collection</param>
+    /// <returns>Service collection</returns>
+    public static IServiceCollection AddFluxGuardRagSecurity(this IServiceCollection services)
+    {
+        services.AddSingleton<IRAGSecurityPipeline, IndirectInjectionDetector>();
+        return services;
+    }
+
+    /// <summary>
+    /// Add the MCP tool-call guardrail (server/tool allowlisting, dangerous-argument detection,
+    /// and indirect-injection/sensitive-data checks on tool results). Opt-in: register this only
+    /// if the consuming application wants MCP tool calls validated — nothing else in
+    /// FluxGuard.Remote requires it.
+    /// </summary>
+    /// <param name="services">Service collection</param>
+    /// <returns>Service collection</returns>
+    public static IServiceCollection AddFluxGuardMcpGuardrail(this IServiceCollection services)
+    {
+        services.AddSingleton<IMCPGuardrail, MCPToolValidator>();
+        return services;
     }
 }

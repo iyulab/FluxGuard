@@ -4,6 +4,17 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.13.0
+
+### Added
+
+- **`IServiceCollection.AddFluxGuardRagSecurity()`/`.AddFluxGuardMcpGuardrail()`** (`FluxGuard.
+  Remote`) — DI registration for `IRAGSecurityPipeline` (indirect prompt injection detection for
+  RAG documents) and `IMCPGuardrail` (MCP tool-call/result validation). Both interfaces and their
+  implementations (`IndirectInjectionDetector`, `MCPToolValidator`) have shipped since FluxGuard.
+  Remote's first release, but had no DI entry point — a consumer wanting either had to construct
+  them by hand. Both are opt-in: nothing else in `FluxGuard.Remote` registers or requires them.
+
 ## 0.12.0
 
 ### Changed — behavior
