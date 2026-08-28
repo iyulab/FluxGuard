@@ -48,7 +48,7 @@ jobs:
         run: dotnet build FluxGuard.slnx --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test FluxGuard.slnx --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+        run: dotnet test FluxGuard.slnx --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage --blame-hang --blame-hang-timeout 5m
 
       - name: Upload coverage reports
         if: matrix.os == 'ubuntu-latest'
