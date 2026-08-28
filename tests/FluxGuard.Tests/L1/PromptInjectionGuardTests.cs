@@ -2,7 +2,7 @@ using FluxGuard.Abstractions;
 using FluxGuard.Core;
 using FluxGuard.L1.Guards.Input;
 using FluxGuard.L1.Patterns;
-using FluentAssertions;
+using AwesomeAssertions;
 using Xunit;
 
 namespace FluxGuard.Tests.L1;

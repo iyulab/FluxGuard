@@ -5,7 +5,7 @@ using FluxGuard.L1.Guards.Input;
 using FluxGuard.L1.Guards.Output;
 using FluxGuard.L1.Patterns;
 using FluxGuard.Presets;
-using FluentAssertions;
+using AwesomeAssertions;
 using Xunit;
 
 namespace FluxGuard.Tests.Presets;

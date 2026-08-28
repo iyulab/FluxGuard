@@ -1,6 +1,6 @@
 using System.Text;
 using FluxGuard.Core;
-using FluentAssertions;
+using AwesomeAssertions;
 using Xunit;
 
 namespace FluxGuard.Tests.L1;

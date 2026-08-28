@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using FluxGuard.L2.Models;
 using Xunit;
 

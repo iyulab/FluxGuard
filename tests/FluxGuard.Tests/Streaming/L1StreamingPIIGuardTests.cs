@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using FluxGuard.Core;
 using FluxGuard.L1.Guards.Streaming;
 using Xunit;

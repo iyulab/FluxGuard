@@ -1,6 +1,6 @@
 using FluxGuard.Configuration;
 using FluxGuard.Core;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 

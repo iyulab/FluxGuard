@@ -1,6 +1,6 @@
 using FluxGuard.Core;
 using FluxGuard.Hooks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Xunit;
 
 namespace FluxGuard.Tests.Hooks;

@@ -2,7 +2,7 @@ using FluxGuard.Abstractions;
 using FluxGuard.Core;
 using FluxGuard.Hooks;
 using FluxGuard.Presets;
-using FluentAssertions;
+using AwesomeAssertions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 

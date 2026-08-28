@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using FluxGuard.Remote.Extensions;
 using FluxGuard.Remote.MCP;
 using FluxGuard.Remote.RAG;

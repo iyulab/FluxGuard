@@ -1,6 +1,6 @@
 #pragma warning disable CA2012 // Use ValueTasks correctly — test mocking requires storing ValueTask from NSubstitute .Returns()
 
-using FluentAssertions;
+using AwesomeAssertions;
 using FluxGuard.Core;
 using FluxGuard.Streaming;
 using NSubstitute;

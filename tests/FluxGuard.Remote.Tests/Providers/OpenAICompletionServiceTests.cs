@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using FluxGuard.Remote.Abstractions;
 using FluxGuard.Remote.Configuration;
 using FluxGuard.Remote.Providers;
