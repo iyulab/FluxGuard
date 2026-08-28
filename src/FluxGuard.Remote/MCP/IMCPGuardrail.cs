@@ -38,6 +38,49 @@ public interface IMCPGuardrail
     /// Get registered servers
     /// </summary>
     IReadOnlyList<MCPServerInfo> GetRegisteredServers();
+
+    /// <summary>
+    /// Validate a server's advertised tool descriptions against the baseline captured the first
+    /// time this method saw that server. Detects tool-description drift — an MCP server silently
+    /// changing a tool's description/metadata after a consumer has already trusted it, a known
+    /// tool-poisoning vector. Implementations that do not have this check enabled MUST return
+    /// <see cref="MCPValidationResult.Valid"/> unconditionally (opt-in — see
+    /// <c>MCPToolValidator</c>'s constructor).
+    /// </summary>
+    /// <param name="serverName">Server name (matches <see cref="MCPServerInfo.Name"/>)</param>
+    /// <param name="tools">The server's currently-advertised tools (e.g. from a fresh
+    /// <c>tools/list</c> response)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Validation result — <see cref="MCPIssueType.ToolDescriptionDrift"/> issues if any
+    /// previously-baselined tool's description/metadata changed</returns>
+    Task<MCPValidationResult> ValidateToolDescriptionsAsync(
+        string serverName,
+        IReadOnlyList<MCPToolDescriptor> tools,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// A single tool as advertised by an MCP server (e.g. one entry of a <c>tools/list</c> response),
+/// as much of it as tool-description-integrity checking needs.
+/// </summary>
+public sealed record MCPToolDescriptor
+{
+    /// <summary>
+    /// Tool name
+    /// </summary>
+    public required string Name { get; init; }
+
+    /// <summary>
+    /// Tool description, as advertised by the server
+    /// </summary>
+    public string? Description { get; init; }
+
+    /// <summary>
+    /// The tool's input schema, serialized (e.g. JSON Schema as a string) — included in the
+    /// integrity baseline alongside the description, since a schema change can alter behavior
+    /// just as silently as a description change
+    /// </summary>
+    public string? InputSchema { get; init; }
 }
 
 /// <summary>
@@ -186,7 +229,13 @@ public enum MCPIssueType
     /// <summary>
     /// Prompt injection in result
     /// </summary>
-    PromptInjection
+    PromptInjection,
+
+    /// <summary>
+    /// A previously-baselined tool's description or input schema changed — a tool-poisoning
+    /// vector where a server alters a tool's behavior contract after a consumer already trusts it
+    /// </summary>
+    ToolDescriptionDrift
 }
 
 /// <summary>

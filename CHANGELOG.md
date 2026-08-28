@@ -4,6 +4,19 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.14.0
+
+### Added
+
+- **`IMCPGuardrail.ValidateToolDescriptionsAsync`** (`FluxGuard.Remote`) — MCP tool
+  description/schema integrity verification. Hashes each tool's description and input schema the
+  first time a server is seen and flags drift on every later call, defending against an MCP server
+  silently rewriting a trusted tool's behavior contract after the fact (tool-poisoning via
+  description drift). Opt-in and nested under the existing `IMCPGuardrail` opt-in: pass
+  `enableToolDescriptionIntegrityCheck: true` to `AddFluxGuardMcpGuardrail()` or `MCPToolValidator`'s
+  constructor — default `false` means zero behavior change for existing consumers. New
+  `MCPIssueType.ToolDescriptionDrift` and `MCPToolDescriptor` record.
+
 ## 0.13.0
 
 ### Added

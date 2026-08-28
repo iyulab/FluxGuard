@@ -218,6 +218,36 @@ services.AddFluxGuardRemote("your-openai-api-key", opt =>
 - Hallucination detection (L3)
 - Multi-model ensemble
 
+## MCP Guard (Optional)
+
+Validates MCP (Model Context Protocol) tool calls and results — for applications that connect to
+MCP servers and want tool-poisoning defenses on that channel. Nothing else in `FluxGuard.Remote`
+registers or requires it.
+
+```csharp
+// DI (ASP.NET Core)
+services.AddFluxGuardMcpGuardrail();
+
+// Manual construction
+var guardrail = new MCPToolValidator();
+guardrail.RegisterServer(new MCPServerInfo
+{
+    Name = "my-mcp-server",
+    IsTrusted = true,
+    AllowedTools = ["read_file", "list_files"]
+});
+```
+
+**MCP Guard provides:**
+- Server/tool allowlisting (`ValidateToolCallAsync`)
+- Dangerous-argument pattern detection (shell injection, path traversal, etc.)
+- Indirect-injection and sensitive-data checks on tool results (`ValidateToolResultAsync`)
+- **Tool description integrity** (`ValidateToolDescriptionsAsync`, opt-in — pass
+  `enableToolDescriptionIntegrityCheck: true` to `AddFluxGuardMcpGuardrail()`/`MCPToolValidator`'s
+  constructor): hashes each tool's description and input schema the first time a server is seen,
+  then flags drift on every later call — catches an MCP server silently rewriting a trusted tool's
+  behavior contract after the fact.
+
 ## SDK Integration
 
 For ASP.NET Core and Microsoft.Extensions.AI integration.

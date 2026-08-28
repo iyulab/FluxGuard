@@ -282,10 +282,18 @@ public static class ServiceCollectionExtensions
     /// FluxGuard.Remote requires it.
     /// </summary>
     /// <param name="services">Service collection</param>
+    /// <param name="enableToolDescriptionIntegrityCheck">Opt-in, off by default: when
+    /// <see langword="true"/>, also enables <see cref="IMCPGuardrail.ValidateToolDescriptionsAsync"/>
+    /// baseline+drift detection (BD-20260828-01) — a further-nested opt-in for consumers that call
+    /// that method on every <c>tools/list</c> refresh and want tool description/schema poisoning
+    /// caught.</param>
     /// <returns>Service collection</returns>
-    public static IServiceCollection AddFluxGuardMcpGuardrail(this IServiceCollection services)
+    public static IServiceCollection AddFluxGuardMcpGuardrail(
+        this IServiceCollection services,
+        bool enableToolDescriptionIntegrityCheck = false)
     {
-        services.AddSingleton<IMCPGuardrail, MCPToolValidator>();
+        services.AddSingleton<IMCPGuardrail>(
+            new MCPToolValidator(enableToolDescriptionIntegrityCheck));
         return services;
     }
 }

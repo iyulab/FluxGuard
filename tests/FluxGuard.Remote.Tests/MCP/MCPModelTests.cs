@@ -116,9 +116,9 @@ public class MCPIssueTests
 public class MCPIssueTypeEnumTests
 {
     [Fact]
-    public void ShouldHaveSevenValues()
+    public void ShouldHaveEightValues()
     {
-        Enum.GetValues<MCPIssueType>().Should().HaveCount(7);
+        Enum.GetValues<MCPIssueType>().Should().HaveCount(8);
     }
 
     [Theory]
@@ -129,6 +129,7 @@ public class MCPIssueTypeEnumTests
     [InlineData(MCPIssueType.RateLimitExceeded, 4)]
     [InlineData(MCPIssueType.SensitiveData, 5)]
     [InlineData(MCPIssueType.PromptInjection, 6)]
+    [InlineData(MCPIssueType.ToolDescriptionDrift, 7)]
     public void ShouldHaveExpectedIntValues(MCPIssueType type, int expected)
     {
         ((int)type).Should().Be(expected);

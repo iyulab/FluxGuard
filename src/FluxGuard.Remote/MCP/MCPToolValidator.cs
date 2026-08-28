@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using FluxGuard.Remote.RAG;
 
@@ -12,6 +14,22 @@ public sealed partial class MCPToolValidator : IMCPGuardrail
 {
     private readonly ConcurrentDictionary<string, MCPServerInfo> _servers = new();
     private readonly IndirectInjectionDetector _injectionDetector = new();
+    private readonly bool _enableToolDescriptionIntegrityCheck;
+    private readonly ConcurrentDictionary<string, IReadOnlyDictionary<string, string>> _toolDescriptionBaselines = new();
+
+    /// <summary>
+    /// Create a validator.
+    /// </summary>
+    /// <param name="enableToolDescriptionIntegrityCheck">Opt-in: when <see langword="false"/>
+    /// (default), <see cref="ValidateToolDescriptionsAsync"/> always returns
+    /// <see cref="MCPValidationResult.Valid"/> without establishing or checking a baseline — no
+    /// behavior change for existing consumers. When <see langword="true"/>, the first call for a
+    /// given server captures its tools' description/schema hashes as the trust baseline, and every
+    /// later call for that server is compared against it (BD-20260828-01).</param>
+    public MCPToolValidator(bool enableToolDescriptionIntegrityCheck = false)
+    {
+        _enableToolDescriptionIntegrityCheck = enableToolDescriptionIntegrityCheck;
+    }
 
     /// <inheritdoc />
     public Task<MCPValidationResult> ValidateToolCallAsync(
@@ -161,6 +179,70 @@ public sealed partial class MCPToolValidator : IMCPGuardrail
     public IReadOnlyList<MCPServerInfo> GetRegisteredServers()
     {
         return [.. _servers.Values];
+    }
+
+    /// <inheritdoc />
+    public Task<MCPValidationResult> ValidateToolDescriptionsAsync(
+        string serverName,
+        IReadOnlyList<MCPToolDescriptor> tools,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_enableToolDescriptionIntegrityCheck)
+        {
+            return Task.FromResult(MCPValidationResult.Valid());
+        }
+
+        var current = tools.ToDictionary(t => t.Name, HashToolDescriptor);
+
+        var baseline = _toolDescriptionBaselines.GetOrAdd(serverName, _ => current);
+        if (ReferenceEquals(baseline, current))
+        {
+            // First observation of this server — baseline just established, nothing to compare.
+            return Task.FromResult(MCPValidationResult.Valid());
+        }
+
+        // Scope: only tools present in the baseline are checked for description/schema drift.
+        // A tool the server didn't previously advertise is a new-tool question, already governed
+        // by MCPServerInfo.AllowedTools in ValidateToolCallAsync — not this check's concern.
+        var issues = new List<MCPIssue>();
+        foreach (var (name, hash) in current)
+        {
+            if (baseline.TryGetValue(name, out var baselineHash) && baselineHash != hash)
+            {
+                issues.Add(new MCPIssue
+                {
+                    Type = MCPIssueType.ToolDescriptionDrift,
+                    Description = $"Tool '{name}' description/schema changed since baseline was established",
+                    Severity = MCPIssueSeverity.Critical
+                });
+            }
+        }
+
+        if (issues.Count > 0 && issues.Any(i => i.Severity >= MCPIssueSeverity.High))
+        {
+            return Task.FromResult(new MCPValidationResult
+            {
+                IsValid = false,
+                ShouldBlock = true,
+                Reason = "MCP tool description integrity check failed",
+                RiskScore = 0.9,
+                Issues = issues
+            });
+        }
+
+        return Task.FromResult(new MCPValidationResult
+        {
+            IsValid = issues.Count == 0,
+            RiskScore = issues.Count > 0 ? 0.3 : 0.0,
+            Issues = issues
+        });
+    }
+
+    private static string HashToolDescriptor(MCPToolDescriptor tool)
+    {
+        var payload = $"{tool.Name} {tool.Description} {tool.InputSchema}";
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
+        return Convert.ToHexString(bytes);
     }
 
     private static MCPIssueSeverity MapSeverity(double confidence) => confidence switch
