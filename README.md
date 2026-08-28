@@ -248,6 +248,34 @@ guardrail.RegisterServer(new MCPServerInfo
   then flags drift on every later call — catches an MCP server silently rewriting a trusted tool's
   behavior contract after the fact.
 
+## RAG Security Pipeline (Optional)
+
+Validates documents *retrieved* by a RAG pipeline before they reach the LLM's context — for
+applications indexing untrusted or third-party content that want indirect-prompt-injection
+defenses on that channel. Nothing else in `FluxGuard.Remote` registers or requires it.
+
+```csharp
+// DI (ASP.NET Core)
+services.AddFluxGuardRagSecurity();
+
+// Manual construction
+var pipeline = new IndirectInjectionDetector();
+var result = await pipeline.ValidateDocumentAsync(new RAGDocument
+{
+    Content = retrievedText,
+    Source = "vector-store"
+});
+if (!result.IsSafe)
+{
+    // result.Threats — detected indirect-injection patterns and their confidence
+}
+```
+
+**RAG Security Pipeline provides:**
+- Indirect prompt-injection detection in retrieved/ingested documents (`ValidateDocumentAsync`/
+  `ValidateDocumentsAsync`) — the same detector `MCP Guard`'s `ValidateToolResultAsync` uses
+  internally for tool results, exposed here for RAG retrieval content directly.
+
 ## SDK Integration
 
 For ASP.NET Core and Microsoft.Extensions.AI integration.
