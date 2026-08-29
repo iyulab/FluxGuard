@@ -67,7 +67,7 @@ public class L3EscalationPipelineTests
             })
             .Build();
 
-        var result = await guard.CheckInputAsync("test input");
+        var result = await guard.CheckInputAsync("test input", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Pass);
         result.IsBlocked.Should().BeFalse();
@@ -92,7 +92,7 @@ public class L3EscalationPipelineTests
             })
             .Build();
 
-        var result = await guard.CheckInputAsync("test input");
+        var result = await guard.CheckInputAsync("test input", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Blocked);
         result.IsBlocked.Should().BeTrue();
@@ -111,7 +111,7 @@ public class L3EscalationPipelineTests
             })
             .Build();
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.NeedsEscalation);
     }
@@ -133,7 +133,7 @@ public class L3EscalationPipelineTests
             })
             .Build();
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.NeedsEscalation);
         await remoteGuard.DidNotReceive().CheckInputAsync(
@@ -158,7 +158,7 @@ public class L3EscalationPipelineTests
             })
             .Build();
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Flagged);
     }
@@ -190,7 +190,7 @@ public class L3EscalationPipelineTests
             })
             .Build();
 
-        var result = await guard.CheckOutputAsync("input", "test output");
+        var result = await guard.CheckOutputAsync("input", "test output", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Pass);
         await remoteGuard.Received(1).CheckOutputAsync(
@@ -226,7 +226,7 @@ public class L3EscalationPipelineTests
             })
             .Build();
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.NeedsEscalation);
         await remoteGuard.DidNotReceive().CheckInputAsync(
@@ -261,7 +261,7 @@ public class L3EscalationPipelineTests
             })
             .Build();
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         // OnEscalationTimeoutAsync default returns the local result
         result.Decision.Should().Be(GuardDecision.NeedsEscalation);
@@ -293,7 +293,7 @@ public class L3EscalationPipelineTests
             })
             .Build();
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Pass);
     }
@@ -320,7 +320,7 @@ public class L3EscalationPipelineTests
             })
             .Build();
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Blocked);
         result.BlockReason.Should().Contain("L3 guard error");

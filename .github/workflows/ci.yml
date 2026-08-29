@@ -48,7 +48,10 @@ jobs:
         run: dotnet build FluxGuard.slnx --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test FluxGuard.slnx --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage --blame-hang --blame-hang-timeout 5m
+        # coverlet.MTP's --coverlet/--coverlet-output-format is MTP's equivalent of VSTest's
+        # --collect "XPlat Code Coverage" (coverlet.collector); --hangdump/--hangdump-timeout is
+        # the equivalent of --blame-hang. --results-directory is unchanged under MTP.
+        run: dotnet test FluxGuard.slnx --no-build --configuration Release --verbosity normal --coverlet --coverlet-output-format cobertura --results-directory ./coverage --hangdump --hangdump-timeout 5m
 
       - name: Upload coverage reports
         if: matrix.os == 'ubuntu-latest'

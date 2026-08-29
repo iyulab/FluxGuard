@@ -18,7 +18,7 @@ public class IndirectInjectionDetectorTests
         };
 
         // Act
-        var result = await _detector.ValidateDocumentAsync(doc);
+        var result = await _detector.ValidateDocumentAsync(doc, TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSafe.Should().BeTrue();
@@ -36,7 +36,7 @@ public class IndirectInjectionDetectorTests
         };
 
         // Act
-        var result = await _detector.ValidateDocumentAsync(doc);
+        var result = await _detector.ValidateDocumentAsync(doc, TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSafe.Should().BeFalse();
@@ -53,7 +53,7 @@ public class IndirectInjectionDetectorTests
         };
 
         // Act
-        var result = await _detector.ValidateDocumentAsync(doc);
+        var result = await _detector.ValidateDocumentAsync(doc, TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSafe.Should().BeFalse();
@@ -70,7 +70,7 @@ public class IndirectInjectionDetectorTests
         };
 
         // Act
-        var result = await _detector.ValidateDocumentAsync(doc);
+        var result = await _detector.ValidateDocumentAsync(doc, TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSafe.Should().BeFalse();
@@ -87,7 +87,7 @@ public class IndirectInjectionDetectorTests
         };
 
         // Act
-        var result = await _detector.ValidateDocumentAsync(doc);
+        var result = await _detector.ValidateDocumentAsync(doc, TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSafe.Should().BeFalse();
@@ -106,7 +106,7 @@ public class IndirectInjectionDetectorTests
         };
 
         // Act
-        var results = await _detector.ValidateDocumentsAsync(docs);
+        var results = await _detector.ValidateDocumentsAsync(docs, TestContext.Current.CancellationToken);
 
         // Assert
         results.Should().HaveCount(3);
@@ -126,7 +126,7 @@ public class IndirectInjectionDetectorTests
         var doc = new RAGDocument { Content = content };
 
         // Act
-        var result = await _detector.ValidateDocumentAsync(doc);
+        var result = await _detector.ValidateDocumentAsync(doc, TestContext.Current.CancellationToken);
 
         // Assert
         result.Threats.Should().Contain(t => t.Type == expectedType);
@@ -142,7 +142,7 @@ public class IndirectInjectionDetectorTests
         };
 
         // Act
-        var result = await _detector.ValidateDocumentAsync(doc);
+        var result = await _detector.ValidateDocumentAsync(doc, TestContext.Current.CancellationToken);
 
         // Assert
         result.SuggestedAction.Should().Be(RAGAction.Block);

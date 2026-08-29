@@ -33,8 +33,7 @@ public class L1StreamingPIIGuardTests
         var context = new GuardContext { OriginalInput = "test" };
 
         // Act
-        var result = await _guard.ValidateChunkAsync(
-            context, "Hello world", "Hello world");
+        var result = await _guard.ValidateChunkAsync(context, "Hello world", "Hello world", TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeTrue();
@@ -48,7 +47,7 @@ public class L1StreamingPIIGuardTests
         var text = "Contact me at user@example.com";
 
         // Act
-        var result = await _guard.ValidateChunkAsync(context, text, text);
+        var result = await _guard.ValidateChunkAsync(context, text, text, TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeFalse();
@@ -65,7 +64,7 @@ public class L1StreamingPIIGuardTests
         var text = "My card is 4111111111111111";
 
         // Act
-        var result = await _guard.ValidateChunkAsync(context, text, text);
+        var result = await _guard.ValidateChunkAsync(context, text, text, TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeFalse();
@@ -81,7 +80,7 @@ public class L1StreamingPIIGuardTests
         var text = "SSN: 123-45-6789";
 
         // Act
-        var result = await _guard.ValidateChunkAsync(context, text, text);
+        var result = await _guard.ValidateChunkAsync(context, text, text, TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeFalse();
@@ -98,7 +97,7 @@ public class L1StreamingPIIGuardTests
         var text = "Contact: user@example.com";
 
         // Act
-        var result = await guard.ValidateChunkAsync(context, text, text);
+        var result = await guard.ValidateChunkAsync(context, text, text, TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeFalse();
@@ -114,7 +113,7 @@ public class L1StreamingPIIGuardTests
         var fullOutput = "Contact me at user@example.com";
 
         // Act
-        var result = await _guard.ValidateFinalAsync(context, fullOutput);
+        var result = await _guard.ValidateFinalAsync(context, fullOutput, TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeFalse();
@@ -129,7 +128,7 @@ public class L1StreamingPIIGuardTests
         var fullOutput = "The weather is nice today.";
 
         // Act
-        var result = await _guard.ValidateFinalAsync(context, fullOutput);
+        var result = await _guard.ValidateFinalAsync(context, fullOutput, TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeTrue();
@@ -142,7 +141,7 @@ public class L1StreamingPIIGuardTests
         var context = new GuardContext { OriginalInput = "test" };
 
         // Act
-        var result = await _guard.ValidateChunkAsync(context, "", "");
+        var result = await _guard.ValidateChunkAsync(context, "", "", TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeTrue();

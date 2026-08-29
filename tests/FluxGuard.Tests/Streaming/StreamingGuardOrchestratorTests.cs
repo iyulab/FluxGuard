@@ -49,7 +49,7 @@ public class StreamingGuardOrchestratorTests
         var chunks = ToAsyncEnumerable("Hello ", "World");
 
         var results = new List<StreamingChunkResult>();
-        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks))
+        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks, TestContext.Current.CancellationToken))
         {
             results.Add(result);
         }
@@ -92,7 +92,7 @@ public class StreamingGuardOrchestratorTests
         var chunks = ToAsyncEnumerable("safe", "bad", "unreachable");
 
         var results = new List<StreamingChunkResult>();
-        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks))
+        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks, TestContext.Current.CancellationToken))
         {
             results.Add(result);
         }
@@ -128,7 +128,7 @@ public class StreamingGuardOrchestratorTests
         var chunks = ToAsyncEnumerable("bad");
 
         var results = new List<StreamingChunkResult>();
-        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks))
+        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks, TestContext.Current.CancellationToken))
         {
             results.Add(result);
         }
@@ -158,7 +158,7 @@ public class StreamingGuardOrchestratorTests
         var chunks = ToAsyncEnumerable("sensitive");
 
         var results = new List<StreamingChunkResult>();
-        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks))
+        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks, TestContext.Current.CancellationToken))
         {
             results.Add(result);
         }
@@ -180,7 +180,7 @@ public class StreamingGuardOrchestratorTests
         var chunks = ToAsyncEnumerable();
 
         var results = new List<StreamingChunkResult>();
-        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks))
+        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks, TestContext.Current.CancellationToken))
         {
             results.Add(result);
         }
@@ -204,7 +204,7 @@ public class StreamingGuardOrchestratorTests
         var chunks = ToAsyncEnumerable("test");
 
         var results = new List<StreamingChunkResult>();
-        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks))
+        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks, TestContext.Current.CancellationToken))
         {
             results.Add(result);
         }
@@ -239,7 +239,7 @@ public class StreamingGuardOrchestratorTests
         var chunks = ToAsyncEnumerable("test");
 
         var results = new List<StreamingChunkResult>();
-        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks))
+        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks, TestContext.Current.CancellationToken))
         {
             results.Add(result);
         }
@@ -260,7 +260,7 @@ public class StreamingGuardOrchestratorTests
         var chunks = ToAsyncEnumerable("hello", "world");
 
         var results = new List<StreamingChunkResult>();
-        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks))
+        await foreach (var result in orchestrator.ValidateStreamAsync(CreateContext(), chunks, TestContext.Current.CancellationToken))
         {
             results.Add(result);
         }

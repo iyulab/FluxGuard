@@ -48,7 +48,7 @@ public class FluxGuardBuilderTests
         var guard = FluxGuard.Create();
 
         // Act
-        var result = await guard.CheckInputAsync("Hello, how are you today?");
+        var result = await guard.CheckInputAsync("Hello, how are you today?", TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().NotBeNull();

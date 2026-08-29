@@ -20,7 +20,7 @@ public class FluxGuardCoreTests
     {
         var guard = FluxGuard.Create();
 
-        var result = await guard.CheckInputAsync("Hello, world!");
+        var result = await guard.CheckInputAsync("Hello, world!", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Pass);
         result.IsBlocked.Should().BeFalse();
@@ -32,7 +32,7 @@ public class FluxGuardCoreTests
         var guard = FluxGuard.Create(builder =>
             builder.ApplyStandardPreset());
 
-        var result = await guard.CheckInputAsync("My SSN is 123-45-6789");
+        var result = await guard.CheckInputAsync("My SSN is 123-45-6789", TestContext.Current.CancellationToken);
 
         result.Score.Should().BeGreaterThan(0);
         result.TriggeredGuards.Should().NotBeEmpty();
@@ -57,7 +57,7 @@ public class FluxGuardCoreTests
     {
         var guard = FluxGuard.Create();
 
-        var result = await guard.CheckOutputAsync("Tell me about weather", "The weather is sunny today.");
+        var result = await guard.CheckOutputAsync("Tell me about weather", "The weather is sunny today.", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Pass);
         result.IsBlocked.Should().BeFalse();
@@ -105,7 +105,7 @@ public class FluxGuardCoreTests
             builder.AddInputGuard(faultyGuard);
         });
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Pass);
     }
@@ -131,7 +131,7 @@ public class FluxGuardCoreTests
             builder.AddInputGuard(faultyGuard);
         });
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Blocked);
         result.BlockReason.Should().Contain("FaultyGuard");
@@ -179,7 +179,7 @@ public class FluxGuardCoreTests
 
         var guard = FluxGuard.Create(builder => builder.AddInputGuard(disabledGuard));
 
-        await guard.CheckInputAsync("test");
+        await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         await disabledGuard.DidNotReceive().CheckAsync(Arg.Any<GuardContext>());
     }
@@ -223,7 +223,7 @@ public class FluxGuardCoreTests
             builder.AddInputGuard(guard2);
         });
 
-        await fluxGuard.CheckInputAsync("test");
+        await fluxGuard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         executionOrder.Should().ContainInOrder("Guard2", "Guard1");
     }
@@ -245,7 +245,7 @@ public class FluxGuardCoreTests
 
         var guard = FluxGuard.Create(builder => builder.AddInputGuard(blockingGuard));
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Blocked);
         result.IsBlocked.Should().BeTrue();
@@ -269,7 +269,7 @@ public class FluxGuardCoreTests
 
         var guard = FluxGuard.Create(builder => builder.AddInputGuard(flagGuard));
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Flagged);
         result.IsFlagged.Should().BeTrue();
@@ -293,7 +293,7 @@ public class FluxGuardCoreTests
 
         var guard = FluxGuard.Create(builder => builder.AddInputGuard(lowScoreGuard));
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Pass);
     }
@@ -323,7 +323,7 @@ public class FluxGuardCoreTests
             });
         });
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.NeedsEscalation);
         result.NeedsEscalation.Should().BeTrue();
@@ -349,7 +349,7 @@ public class FluxGuardCoreTests
             });
         });
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         // Without L3 escalation, it should NOT return NeedsEscalation
         result.Decision.Should().NotBe(GuardDecision.NeedsEscalation);
@@ -373,7 +373,7 @@ public class FluxGuardCoreTests
                 .OnBeforeCheck(_ => ValueTask.FromResult(false)));
         });
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Pass);
         await inputGuard.DidNotReceive().CheckAsync(Arg.Any<GuardContext>());
@@ -402,7 +402,7 @@ public class FluxGuardCoreTests
                 }));
         });
 
-        await guard.CheckInputAsync("test");
+        await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         blockedCalled.Should().BeTrue();
     }
@@ -421,7 +421,7 @@ public class FluxGuardCoreTests
                 }));
         });
 
-        await guard.CheckInputAsync("Hello, world!");
+        await guard.CheckInputAsync("Hello, world!", TestContext.Current.CancellationToken);
 
         passedCalled.Should().BeTrue();
     }
@@ -449,7 +449,7 @@ public class FluxGuardCoreTests
                 }));
         });
 
-        await guard.CheckInputAsync("test");
+        await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         flaggedCalled.Should().BeTrue();
     }
@@ -468,7 +468,7 @@ public class FluxGuardCoreTests
                 }));
         });
 
-        await guard.CheckInputAsync("test");
+        await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         afterCheckCalled.Should().BeTrue();
     }
@@ -497,7 +497,7 @@ public class FluxGuardCoreTests
                 }));
         });
 
-        await guard.CheckInputAsync("test");
+        await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         errorCalled.Should().BeTrue();
     }
@@ -518,7 +518,7 @@ public class FluxGuardCoreTests
                 .OnCustomDecision((_, _) => ValueTask.FromResult<FailDecision?>(overrideDecision)));
         });
 
-        var result = await guard.CheckInputAsync("safe input");
+        var result = await guard.CheckInputAsync("safe input", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Blocked);
         result.BlockReason.Should().Be("custom block");

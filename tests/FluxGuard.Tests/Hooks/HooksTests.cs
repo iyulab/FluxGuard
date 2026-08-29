@@ -123,7 +123,7 @@ public class LambdaHooksBuilderTests
                 }));
         });
 
-        await guard.CheckInputAsync("test");
+        await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         called.Should().BeTrue();
     }
@@ -142,7 +142,7 @@ public class LambdaHooksBuilderTests
                 }));
         });
 
-        await guard.CheckInputAsync("test");
+        await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         called.Should().BeTrue();
     }
@@ -156,7 +156,7 @@ public class LambdaHooksBuilderTests
             builder.WithHooks(_ => { /* no hooks configured */ });
         });
 
-        var result = await guard.CheckInputAsync("test");
+        var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Pass);
     }

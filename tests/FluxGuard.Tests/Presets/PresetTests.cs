@@ -274,7 +274,7 @@ public class StrictPresetTests
         var guard = FluxGuard.Create(builder => builder.ApplyStrictPreset());
 
         // Safe input should still pass
-        var result = await guard.CheckInputAsync("Hello, how are you?");
+        var result = await guard.CheckInputAsync("Hello, how are you?", TestContext.Current.CancellationToken);
         result.IsBlocked.Should().BeFalse();
     }
 

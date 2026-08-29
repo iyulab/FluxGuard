@@ -90,7 +90,7 @@ public sealed class OpenAICompletionServiceTests : IDisposable
         var request = new CompletionRequest { UserPrompt = "Hello" };
 
         // Act
-        var result = await service.CompleteAsync(request);
+        var result = await service.CompleteAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         result.Success.Should().BeFalse();

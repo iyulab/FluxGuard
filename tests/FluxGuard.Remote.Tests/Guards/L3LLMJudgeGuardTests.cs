@@ -71,7 +71,7 @@ public class L3LLMJudgeGuardTests
                 """, "gpt-4o-mini"));
 
         // Act
-        var result = await _guard.CheckInputAsync(context, l2Result);
+        var result = await _guard.CheckInputAsync(context, l2Result, TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeTrue();
@@ -99,7 +99,7 @@ public class L3LLMJudgeGuardTests
                 """, "gpt-4o-mini"));
 
         // Act
-        var result = await _guard.CheckInputAsync(context, l2Result);
+        var result = await _guard.CheckInputAsync(context, l2Result, TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeFalse();
@@ -120,7 +120,7 @@ public class L3LLMJudgeGuardTests
             .Returns(CompletionResponse.Fail("API error"));
 
         // Act
-        var result = await _guard.CheckInputAsync(context, l2Result);
+        var result = await _guard.CheckInputAsync(context, l2Result, TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeTrue();
@@ -140,10 +140,10 @@ public class L3LLMJudgeGuardTests
             Score = 0.2,
             Reasoning = "Cached response"
         };
-        await _cache.SetAsync(context.OriginalInput, "InputJudge", cachedResult);
+        await _cache.SetAsync(context.OriginalInput, "InputJudge", cachedResult, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await _guard.CheckInputAsync(context, l2Result);
+        var result = await _guard.CheckInputAsync(context, l2Result, TestContext.Current.CancellationToken);
 
         // Assert
         result.FromCache.Should().BeTrue();
@@ -174,7 +174,7 @@ public class L3LLMJudgeGuardTests
                 """));
 
         // Act
-        var result = await _guard.CheckOutputAsync(context, output, l2Result);
+        var result = await _guard.CheckOutputAsync(context, output, l2Result, TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeTrue();
@@ -192,7 +192,7 @@ public class L3LLMJudgeGuardTests
             .Returns(CompletionResponse.Ok("not valid json"));
 
         // Act
-        var result = await _guard.CheckInputAsync(context, l2Result);
+        var result = await _guard.CheckInputAsync(context, l2Result, TestContext.Current.CancellationToken);
 
         // Assert
         result.Passed.Should().BeTrue();
@@ -224,7 +224,7 @@ public class L3LLMJudgeGuardTests
             .Returns(CompletionResponse.Ok("""{"is_safe": true, "confidence": 0.1}"""));
 
         // Act
-        await _guard.CheckInputAsync(context, l2Result);
+        await _guard.CheckInputAsync(context, l2Result, TestContext.Current.CancellationToken);
 
         // Assert
         await _completionService

@@ -28,7 +28,7 @@ public class InMemorySemanticCacheTests
     public async Task TryGetAsync_NotCached_ReturnsNull()
     {
         // Act
-        var result = await _cache.TryGetAsync("test input", "InputJudge");
+        var result = await _cache.TryGetAsync("test input", "InputJudge", TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().BeNull();
@@ -48,8 +48,8 @@ public class InMemorySemanticCacheTests
         };
 
         // Act
-        await _cache.SetAsync(input, guardType, expectedResult);
-        var result = await _cache.TryGetAsync(input, guardType);
+        await _cache.SetAsync(input, guardType, expectedResult, TestContext.Current.CancellationToken);
+        var result = await _cache.TryGetAsync(input, guardType, TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -65,10 +65,10 @@ public class InMemorySemanticCacheTests
         var input = "test input";
         var result = new RemoteGuardResult { Passed = true };
 
-        await _cache.SetAsync(input, "InputJudge", result);
+        await _cache.SetAsync(input, "InputJudge", result, TestContext.Current.CancellationToken);
 
         // Act
-        var cached = await _cache.TryGetAsync(input, "OutputJudge");
+        var cached = await _cache.TryGetAsync(input, "OutputJudge", TestContext.Current.CancellationToken);
 
         // Assert
         cached.Should().BeNull();
@@ -82,9 +82,9 @@ public class InMemorySemanticCacheTests
         var result = new RemoteGuardResult { Passed = true };
 
         // Act - 1 set, 1 hit, 1 miss
-        await _cache.SetAsync(input, "Test", result);
-        await _cache.TryGetAsync(input, "Test");  // hit
-        await _cache.TryGetAsync("other", "Test"); // miss
+        await _cache.SetAsync(input, "Test", result, TestContext.Current.CancellationToken);
+        await _cache.TryGetAsync(input, "Test", TestContext.Current.CancellationToken);  // hit
+        await _cache.TryGetAsync("other", "Test", TestContext.Current.CancellationToken); // miss
 
         var stats = _cache.GetStats();
 
@@ -99,11 +99,11 @@ public class InMemorySemanticCacheTests
     public async Task ClearAsync_RemovesAllEntries()
     {
         // Arrange
-        await _cache.SetAsync("input1", "Test", new RemoteGuardResult { Passed = true });
-        await _cache.SetAsync("input2", "Test", new RemoteGuardResult { Passed = false });
+        await _cache.SetAsync("input1", "Test", new RemoteGuardResult { Passed = true }, TestContext.Current.CancellationToken);
+        await _cache.SetAsync("input2", "Test", new RemoteGuardResult { Passed = false }, TestContext.Current.CancellationToken);
 
         // Act
-        await _cache.ClearAsync();
+        await _cache.ClearAsync(TestContext.Current.CancellationToken);
         var stats = _cache.GetStats();
 
         // Assert
@@ -120,8 +120,8 @@ public class InMemorySemanticCacheTests
         var disabledCache = new InMemorySemanticCache(options);
 
         // Act
-        await disabledCache.SetAsync("input", "Test", new RemoteGuardResult { Passed = true });
-        var result = await disabledCache.TryGetAsync("input", "Test");
+        await disabledCache.SetAsync("input", "Test", new RemoteGuardResult { Passed = true }, TestContext.Current.CancellationToken);
+        var result = await disabledCache.TryGetAsync("input", "Test", TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().BeNull();
@@ -141,11 +141,11 @@ public class InMemorySemanticCacheTests
         // Add 10 entries
         for (int i = 0; i < 10; i++)
         {
-            await smallCache.SetAsync($"input{i}", "Test", new RemoteGuardResult { Passed = true });
+            await smallCache.SetAsync($"input{i}", "Test", new RemoteGuardResult { Passed = true }, TestContext.Current.CancellationToken);
         }
 
         // Act - Add one more to trigger eviction
-        await smallCache.SetAsync("input_new", "Test", new RemoteGuardResult { Passed = true });
+        await smallCache.SetAsync("input_new", "Test", new RemoteGuardResult { Passed = true }, TestContext.Current.CancellationToken);
 
         var stats = smallCache.GetStats();
 
@@ -158,10 +158,10 @@ public class InMemorySemanticCacheTests
     {
         // Arrange
         var result = new RemoteGuardResult { Passed = true };
-        await _cache.SetAsync("  Test Input  ", "Test", result);
+        await _cache.SetAsync("  Test Input  ", "Test", result, TestContext.Current.CancellationToken);
 
         // Act - Different whitespace, same content after normalization
-        var cached = await _cache.TryGetAsync("test input", "Test");
+        var cached = await _cache.TryGetAsync("test input", "Test", TestContext.Current.CancellationToken);
 
         // Assert
         cached.Should().NotBeNull();

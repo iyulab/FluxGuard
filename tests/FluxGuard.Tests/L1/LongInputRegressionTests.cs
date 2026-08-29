@@ -36,7 +36,7 @@ public class LongInputRegressionTests
         var output = BuildLongText(100_000,
             "The quick brown fox jumps over the lazy dog while discussing quarterly results. ");
 
-        var result = await guard.CheckOutputAsync("summarize the report", output);
+        var result = await guard.CheckOutputAsync("summarize the report", output, TestContext.Current.CancellationToken);
 
         (result.BlockReason ?? string.Empty).Should().NotContain("Guard error");
     }
@@ -50,7 +50,7 @@ public class LongInputRegressionTests
         var output = BuildLongText(100_000,
             "I am confident I can help with this because I will always try, as an assistant of value. ");
 
-        var result = await guard.CheckOutputAsync("question", output);
+        var result = await guard.CheckOutputAsync("question", output, TestContext.Current.CancellationToken);
 
         (result.BlockReason ?? string.Empty).Should().NotContain("Guard error");
     }
@@ -64,7 +64,7 @@ public class LongInputRegressionTests
         var input = BuildLongText(100_000,
             "ref DE44500105175407324931XX code 123-45-67 890-12-34 batch AB12CDEF1234567QRSTUVWX ");
 
-        var result = await guard.CheckInputAsync(input);
+        var result = await guard.CheckInputAsync(input, TestContext.Current.CancellationToken);
 
         (result.BlockReason ?? string.Empty).Should().NotContain("Guard error");
     }

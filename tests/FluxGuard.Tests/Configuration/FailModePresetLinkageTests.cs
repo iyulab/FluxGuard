@@ -33,7 +33,7 @@ public class FailModePresetLinkageTests
             .WithPreset(GuardPreset.Strict)
             .AddInputGuard(new ThrowingInputGuard()));
 
-        var result = await guard.CheckInputAsync("hello");
+        var result = await guard.CheckInputAsync("hello", TestContext.Current.CancellationToken);
 
         result.Decision.Should().Be(GuardDecision.Blocked,
             "Strict without an explicit FailMode must fail closed, not silently bypass the guard");
@@ -49,7 +49,7 @@ public class FailModePresetLinkageTests
             .WithFailMode(FailMode.Open)
             .AddInputGuard(new ThrowingInputGuard()));
 
-        var result = await guard.CheckInputAsync("hello");
+        var result = await guard.CheckInputAsync("hello", TestContext.Current.CancellationToken);
 
         result.Decision.Should().NotBe(GuardDecision.Blocked,
             "an explicit WithFailMode(Open) must override the preset default");
@@ -77,7 +77,7 @@ public class FailModePresetLinkageTests
             .WithPreset(preset)
             .AddInputGuard(new ThrowingInputGuard()));
 
-        var result = await guard.CheckInputAsync("hello");
+        var result = await guard.CheckInputAsync("hello", TestContext.Current.CancellationToken);
 
         result.Decision.Should().NotBe(GuardDecision.Blocked,
             "availability-first presets keep the existing fail-open behavior");
