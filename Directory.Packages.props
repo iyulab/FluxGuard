@@ -11,7 +11,16 @@
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.8" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.8" />
     <!-- ML/ONNX -->
-    <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.26.0" />
+    <!-- Deliberately not "latest patch": NuGet's highest-floor-wins resolution means this
+         package's own floor becomes the effective floor for every consumer that shares ORT
+         in their graph, even ones with no use for anything past this version. Pinned to
+         1.24.4, matching modules/lm-supply's own re-pin (ORT 1.26.0 has a DirectML
+         LayerNorm/QDQ-scale crash lm-supply worked around by dropping back), and this
+         package's own L2/ML layer (OnnxSessionManager, SessionOptionsFactory,
+         L2PromptInjectionGuard, L2ToxicityGuard) uses only baseline ORT API (InferenceSession,
+         SessionOptions, Tensors) with no 1.25/1.26-specific surface. See docket
+         iyulab/FluxGuard#156. -->
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.24.4" />
     <PackageVersion Include="Microsoft.ML.Tokenizers" Version="2.0.0" />
     <!-- ASP.NET Core -->
     <PackageVersion Include="Microsoft.AspNetCore.Http" Version="2.3.10" />

@@ -4,6 +4,19 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.14.1
+
+### Changed
+
+- **`Microsoft.ML.OnnxRuntime` floor lowered from `1.26.0` to `1.24.4`.** The prior floor landed via
+  a routine multi-package dependency sweep, not a deliberate requirement — this package's ML layer
+  uses only baseline ORT API (`InferenceSession`, `SessionOptions`, `Tensors`) with nothing specific
+  to 1.25/1.26. Because NuGet resolves a consumer's whole graph to the *highest* floor any package
+  declares, this package's own floor was forcing every consumer that also depends on ORT (even
+  transitively) onto `>= 1.26.0`, overriding any lower pin they needed. 1.24.4 matches
+  `modules/lm-supply`'s own re-pin (working around a known ORT 1.26.0 DirectML crash) in this
+  ecosystem.
+
 ## 0.14.0
 
 ### Added
