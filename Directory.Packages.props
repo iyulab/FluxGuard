@@ -24,10 +24,8 @@
     <PackageVersion Include="Microsoft.ML.Tokenizers" Version="2.0.0" />
     <!-- ASP.NET Core -->
     <PackageVersion Include="Microsoft.AspNetCore.Http" Version="2.3.10" />
-    <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <!-- Microsoft.Extensions.AI -->
     <PackageVersion Include="Microsoft.Extensions.AI" Version="10.6.0" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.9.0" />
     <!-- Testing (xUnit v3 / Microsoft.Testing.Platform — BD-20260829-xunit-v3-pilot rollout) -->
     <PackageVersion Include="xunit.v3" Version="4.0.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
@@ -40,6 +38,5 @@
     <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
     <PackageVersion Include="NSubstitute" Version="6.2.0" />
     <!-- Benchmarks -->
-    <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
   </ItemGroup>
 </Project>
