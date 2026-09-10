@@ -51,7 +51,7 @@ jobs:
         # coverlet.MTP's --coverlet/--coverlet-output-format is MTP's equivalent of VSTest's
         # --collect "XPlat Code Coverage" (coverlet.collector); --hangdump/--hangdump-timeout is
         # the equivalent of --blame-hang. --results-directory is unchanged under MTP.
-        run: dotnet test FluxGuard.slnx --no-build --configuration Release --verbosity normal --coverlet --coverlet-output-format cobertura --results-directory ./coverage --hangdump --hangdump-timeout 5m
+        run: dotnet test --solution FluxGuard.slnx --no-build --configuration Release --verbosity normal --coverlet --coverlet-output-format cobertura --results-directory ./coverage --hangdump --hangdump-timeout 5m
 
       - name: Upload coverage reports
         if: matrix.os == 'ubuntu-latest'
