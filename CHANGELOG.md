@@ -4,6 +4,15 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.14.2
+
+### Changed
+
+- **`Microsoft.ML.OnnxRuntime` raised from `1.24.4` to `1.30.0`.** The 1.24.4 hold existed because the
+  1.25+ line had regressed a sibling package's CPU Whisper decoder; 1.30.0 has now been exercised
+  against real models on that sibling (transcriber, embedder and reranker suites) and this package's
+  own suite, with no regression. Consumers that also depend on ORT will resolve to `>= 1.30.0`.
+
 ## 0.14.1
 
 ### Changed
