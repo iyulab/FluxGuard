@@ -120,10 +120,10 @@ public class JapanesePIIPatternTests
     #region Korean Pattern Extended Tests (moved from PIIPatternTests coverage)
 
     [Fact]
-    public void KoreanPatterns_Returns7Patterns()
+    public void KoreanPatterns_Returns8Patterns()
     {
         var patterns = KoreanPIIPatterns.GetPatterns().ToList();
-        patterns.Should().HaveCount(7);
+        patterns.Should().HaveCount(8);
     }
 
     [Fact]

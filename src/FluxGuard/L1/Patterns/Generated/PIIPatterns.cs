@@ -176,9 +176,11 @@ public static partial class PIIPatterns
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex APIKeyRegex();
 
-    // Password pattern
+    // Password pattern. 'pw' is language-independent shorthand (the most common label in Korean
+    // operations documents) and takes a word boundary of its own, since two letters inside a longer
+    // word are not a label; the other labels keep their historical, boundary-free matching.
     [GeneratedRegex(
-        @"(?i)(password|passwd|pwd|pass)\s*[:=]\s*[^\s]{4,}",
+        @"(?i)(password|passwd|pwd|pass|\bpw)\s*[:=]\s*[^\s]{4,}",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex PasswordRegex();

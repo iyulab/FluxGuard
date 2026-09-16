@@ -4,6 +4,23 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.15.0
+
+### Added
+
+- **Korean credential labels (PII_KO008).** With `ko` enabled, a secret labelled `비밀번호`, `패스워드`,
+  `비번` or `암호` followed by `:` or `=` is detected. The English Password pattern (PII009) knows English
+  labels only, so a Korean operations document had none of its credentials flagged even with `ko` on.
+  Two deliberate limits keep the false-positive cost down: `암호화` (encryption) is not a label, and the
+  value must be printable ASCII without spaces, so a Korean phrase after the label (`비밀번호: 관리자에게
+  문의`) is not a match. Forms without a separator (`비번 abcd1234`) are out of scope. Confidence 0.75,
+  below the English pattern's 0.85.
+- **`pw` shorthand on PII009.** `PW : abcd1234` and `pw=abcd1234` now match. The shorthand takes a word
+  boundary of its own; the historical labels keep their boundary-free matching.
+
+**Behavior change**: inputs and outputs that carry a Korean-labelled or `pw`-labelled secret now score on
+the PII guards where they did not before.
+
 ## 0.14.2
 
 ### Changed

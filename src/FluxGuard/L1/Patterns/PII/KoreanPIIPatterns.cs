@@ -86,7 +86,31 @@ public static partial class KoreanPIIPatterns
             Confidence = 0.85,
             Description = "Detects Korean business registration numbers"
         };
+
+        yield return new PatternDefinition
+        {
+            Id = "PII_KO008",
+            Name = "KoreanPassword",
+            Regex = KoreanPasswordRegex(),
+            Severity = Severity.Critical,
+            // Below the English Password pattern (0.85): a Korean label is followed by a Korean
+            // sentence at least as often as by a secret, and the value shape is the only other signal.
+            Confidence = 0.75,
+            Description = "Detects passwords labelled in Korean (비밀번호, 패스워드, 비번, 암호)"
+        };
     }
+
+    // Credentials labelled in Korean: 비밀번호 / 패스워드 / 비번 / 암호, a ':' or '=' separator, then a
+    // secret. The English Password pattern (PII009) only knows English labels, so a corpus of Korean
+    // operations documents got none of these flagged. Two deliberate limits: '암호' is not matched when it
+    // starts '암호화' ("encryption: AES-256" is not a credential), and the value must be printable ASCII
+    // with no spaces - a Korean phrase after the label ("비밀번호: 관리자에게 문의") is an instruction, not
+    // a secret. Forms without a separator ("비번 abcd1234") are left alone: too many false positives.
+    [GeneratedRegex(
+        @"(비밀번호|패스워드|비번|암호(?!화))\s*[:=]\s*[\x21-\x7E]{4,}",
+        RegexOptions.Compiled,
+        matchTimeoutMilliseconds: 1000)]
+    private static partial Regex KoreanPasswordRegex();
 
     // Resident Registration Number: YYMMDD-GXXXXXX (13 digits with hyphen)
     [GeneratedRegex(
