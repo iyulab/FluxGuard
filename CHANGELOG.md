@@ -4,6 +4,12 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.15.1
+
+### Changed
+
+- Microsoft.Extensions.* / Microsoft.Data.Sqlite / EF Core pins raised to 10.0.12 (September 2026 .NET servicing).
+
 ## 0.15.0
 
 ### Added
