@@ -53,28 +53,35 @@ dotnet add package FluxGuard.SDK
 ## Quick Start
 
 ```csharp
-// Start with one line - all core guards are enabled
-var guard = new FluxGuard();
+// One line: the standard preset (the L1 pattern guards below)
+var guard = FluxGuard.Create();
 
-var inputCheck = guard.CheckInput(userMessage);
-if (inputCheck.Blocked)
+var inputCheck = await guard.CheckInputAsync(userMessage);
+if (inputCheck.IsBlocked)
 {
-    return inputCheck.BlockedResponse;
+    return inputCheck.BlockReason;
 }
 
 var response = await llm.CompleteAsync(userMessage);
 
-var outputCheck = guard.CheckOutput(response);
-return outputCheck.SanitizedContent ?? response;
+var outputCheck = await guard.CheckOutputAsync(userMessage, response);
+if (outputCheck.IsBlocked)
+{
+    return outputCheck.BlockReason;
+}
+return response;
 ```
 
-**This alone provides:**
+**This alone provides (standard preset, L1):**
 - Prompt injection detection ✅
-- Jailbreak attempt blocking ✅
+- Jailbreak attempt detection ✅
 - Encoding bypass attack defense ✅
-- PII exposure/leakage prevention ✅
-- Toxic content filtering ✅
-- Rate limiting ✅
+- PII exposure (input) / leakage (output) detection ✅
+- Refusal detection on output ✅
+- Input / output length limits (`MaxInputLength`, `MaxOutputLength`; 128,000 characters by default) ✅
+
+Not part of any preset: the L2 (local ML) guards and L3 (remote) guards are added explicitly — see
+[Guard Layers](#guard-layers).
 
 ## Architecture
 
@@ -103,8 +110,8 @@ return outputCheck.SanitizedContent ?? response;
 
 | Layer | Location | Latency | Default |
 |-------|----------|---------|---------|
-| **L1** | Local | <1ms | ✅ ON |
-| **L2** | Local | 5-20ms | ✅ ON |
+| **L1** | Local | <1ms | ✅ ON (presets register these) |
+| **L2** | Local | 5-20ms | ❌ OFF — no preset registers them; add `L2PromptInjectionGuard` / `L2ToxicityGuard` with `AddInputGuard` / `AddOutputGuard` (they need an `OnnxSessionManager` and the model files) |
 | **L3** | Remote | 50-200ms | ❌ OFF (opt-in) |
 
 ## Default Guards (All ON)
@@ -153,16 +160,20 @@ var guard = FluxGuard.Create(builder => builder
 ### Presets
 
 ```csharp
-// Standard (default) - L1 + L2, all local guards enabled
-var guard = new FluxGuard();
-var guard = new FluxGuard(GuardPreset.Standard);
+// Standard (default)
+var guard = FluxGuard.Create();
+var guard = FluxGuard.Create(b => b.WithPreset(GuardPreset.Standard));
 
-// Strict - Standard + stricter thresholds
-var guard = new FluxGuard(GuardPreset.Strict);
+// Strict - every standard guard with lower escalation thresholds; ApplyStrictPreset() also lowers
+// the block / flag thresholds
+var guard = FluxGuard.Create(b => b.ApplyStrictPreset());
 
-// Minimal - L1 only, minimum latency
-var guard = new FluxGuard(GuardPreset.Minimal);
+// Minimal - prompt injection, jailbreak and PII leakage only, minimum latency
+var guard = FluxGuard.Create(b => b.ApplyMinimalPreset());
 ```
+
+Switches set with `ConfigureInputGuards` / `ConfigureOutputGuards` apply to the preset's guards whether they
+are set before or after the preset is chosen.
 
 ### Dependency Injection
 

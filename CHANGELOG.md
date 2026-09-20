@@ -28,6 +28,10 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   options, whichever order the calls came in. The builder and `AddFluxGuard(...)` share that one path.
 - The README's builder example called members that do not exist (`WithInputGuards`, `WithOutputGuards`,
   `PIIMaskingPattern`, `RateLimit.RequestsPerMinute`). It now uses the API as it is.
+- The README's Quick Start and Presets sections constructed `new FluxGuard(...)` (a static class), read
+  `Blocked` / `BlockedResponse` / `SanitizedContent` (not members of `GuardResult`), and listed toxicity filtering
+  and rate limiting as on by default. They now use `FluxGuard.Create(...)` and `IsBlocked` / `BlockReason`, and
+  say what a preset registers: the L1 guards. The L2 (local ML) guards are not part of any preset.
 
 ## 0.15.1
 
