@@ -13,6 +13,8 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   `L2PromptInjectionGuard` and `L2ToxicityGuard` by hand. The call adds both on top of whatever the builder resolves
   to (the default preset included) and throws `InvalidOperationException`, naming the files, if a model or
   vocabulary file is missing.
+- `StreamingGuardOptions.FailMode` (default `Open`): what a streaming guard that throws means. `Closed` terminates
+  the stream, with the guard's name in the verdict; `Open` skips the guard, as before.
 
 ### Removed
 
@@ -47,6 +49,14 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   kept passing for the cache lifetime; a failed call is no longer cached.
   **Behavior change:** under `FailMode.Closed`, an unreachable judge or detector now blocks. Under `FailMode.Open`
   the outcome is the same as before.
+- **`StreamingGuardOrchestrator` sent the end of the stream twice.** Its final result carried the unprocessed tail
+  of the buffer as `OutputChunk`, after every chunk had already been forwarded, so a caller that forwards
+  `OutputChunk` repeated that tail (the whole output, with sentence-level validation off). The final result now
+  carries the verdict on the whole output and no text; `IsTerminated` is set on it when that verdict says to stop.
+  **Behavior change:** the final result's `OutputChunk` is always null and its `OriginalChunk` is empty.
+- **`StreamingGuardOptions.MinChunkSize` is now honoured.** Nothing read it. Chunks are held until that many
+  characters have arrived and are validated (and forwarded) together; what is still held when the stream ends is
+  validated before the final result. The default of 1 validates every chunk, as before.
 - **The L2 guards answered "safe" whenever they could not run** - model not registered, inference failure, any
   exception - whatever the fail mode. They now throw, so the pipeline's `FailMode` decides: skipped and reported to
   `OnGuardErrorAsync` under `FailMode.Open`, blocking under `FailMode.Closed`.

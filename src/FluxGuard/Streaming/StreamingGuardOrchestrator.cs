@@ -30,73 +30,46 @@ public sealed class StreamingGuardOrchestrator
     /// <param name="context">Guard context</param>
     /// <param name="chunks">Stream of output chunks</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Stream of validated chunks with validation results</returns>
+    /// <returns>
+    /// One result per validated chunk - forward its <see cref="StreamingChunkResult.OutputChunk"/> - and, when the
+    /// stream ran to its end, a last result with <see cref="StreamingChunkResult.IsFinal"/> set that carries the verdict
+    /// on the whole output. The final result never carries text: every chunk was already forwarded by then.
+    /// Chunks shorter than <see cref="StreamingGuardOptions.MinChunkSize"/> are held and validated together.
+    /// </returns>
     public async IAsyncEnumerable<StreamingChunkResult> ValidateStreamAsync(
         GuardContext context,
         IAsyncEnumerable<string> chunks,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var buffer = new ChunkBuffer(_options.MaxBufferSize);
+        var pending = new System.Text.StringBuilder();
+        var sawAnyChunk = false;
 
         await foreach (var chunk in chunks.WithCancellation(cancellationToken))
         {
+            sawAnyChunk = true;
             buffer.Append(chunk);
+            pending.Append(chunk);
 
-            // Validate chunk with all guards
-            var (validation, shouldContinue) = await ValidateChunkWithGuardsAsync(
-                context, chunk, buffer.Content, cancellationToken);
-
-            if (!shouldContinue)
+            if (pending.Length < _options.MinChunkSize)
             {
-                // Stream terminated by guard
-                yield return new StreamingChunkResult
-                {
-                    OriginalChunk = chunk,
-                    Validation = validation,
-                    IsTerminated = true
-                };
+                continue;
+            }
+
+            var text = pending.ToString();
+            pending.Clear();
+
+            var result = await ValidateOneAsync(context, text, buffer.Content, cancellationToken);
+            yield return result;
+            if (result.IsTerminated)
+            {
                 yield break;
-            }
-
-            if (validation.ShouldSuppress)
-            {
-                // Chunk suppressed - yield replacement if any
-                if (!string.IsNullOrEmpty(validation.ReplacementText))
-                {
-                    yield return new StreamingChunkResult
-                    {
-                        OriginalChunk = chunk,
-                        OutputChunk = validation.ReplacementText,
-                        Validation = validation,
-                        IsSuppressed = true
-                    };
-                }
-                else
-                {
-                    yield return new StreamingChunkResult
-                    {
-                        OriginalChunk = chunk,
-                        Validation = validation,
-                        IsSuppressed = true
-                    };
-                }
-            }
-            else
-            {
-                // Chunk passed - yield as-is
-                yield return new StreamingChunkResult
-                {
-                    OriginalChunk = chunk,
-                    OutputChunk = chunk,
-                    Validation = validation
-                };
             }
 
             // Periodically validate accumulated buffer for sentence-level checks
             if (_options.EnableSentenceLevelValidation && buffer.MayContainIncompleteSensitiveData())
             {
-                var sentences = buffer.ExtractAllSentences();
-                foreach (var sentence in sentences)
+                foreach (var sentence in buffer.ExtractAllSentences())
                 {
                     var sentenceValidation = await ValidateSentenceWithGuardsAsync(
                         context, sentence, cancellationToken);
@@ -115,21 +88,61 @@ public sealed class StreamingGuardOrchestrator
             }
         }
 
-        // Final validation of remaining buffer
-        var remaining = buffer.Flush();
-        if (!string.IsNullOrEmpty(remaining))
+        // Chunks still held below MinChunkSize when the stream ended
+        if (pending.Length > 0)
         {
-            var finalValidation = await ValidateFinalWithGuardsAsync(
-                context, buffer.Content, cancellationToken);
-
-            yield return new StreamingChunkResult
+            var result = await ValidateOneAsync(context, pending.ToString(), buffer.Content, cancellationToken);
+            yield return result;
+            if (result.IsTerminated)
             {
-                OriginalChunk = remaining,
-                OutputChunk = finalValidation.ShouldSuppress ? finalValidation.ReplacementText : remaining,
-                Validation = finalValidation,
-                IsFinal = true
+                yield break;
+            }
+        }
+
+        if (!sawAnyChunk)
+        {
+            yield break;
+        }
+
+        // Verdict on the whole output. It carries no text: everything was forwarded chunk by chunk above.
+        buffer.Flush();
+        var finalValidation = await ValidateFinalWithGuardsAsync(context, buffer.Content, cancellationToken);
+
+        yield return new StreamingChunkResult
+        {
+            OriginalChunk = string.Empty,
+            Validation = finalValidation,
+            IsTerminated = finalValidation.ShouldTerminate,
+            IsFinal = true
+        };
+    }
+
+    private async ValueTask<StreamingChunkResult> ValidateOneAsync(
+        GuardContext context,
+        string chunk,
+        string bufferContent,
+        CancellationToken cancellationToken)
+    {
+        var (validation, shouldContinue) = await ValidateChunkWithGuardsAsync(
+            context, chunk, bufferContent, cancellationToken);
+
+        if (!shouldContinue)
+        {
+            return new StreamingChunkResult { OriginalChunk = chunk, Validation = validation, IsTerminated = true };
+        }
+
+        if (validation.ShouldSuppress)
+        {
+            return new StreamingChunkResult
+            {
+                OriginalChunk = chunk,
+                OutputChunk = string.IsNullOrEmpty(validation.ReplacementText) ? null : validation.ReplacementText,
+                Validation = validation,
+                IsSuppressed = true
             };
         }
+
+        return new StreamingChunkResult { OriginalChunk = chunk, OutputChunk = chunk, Validation = validation };
     }
 
     private async ValueTask<(TokenValidation validation, bool shouldContinue)> ValidateChunkWithGuardsAsync(
@@ -158,9 +171,13 @@ public sealed class StreamingGuardOrchestrator
             {
                 throw;
             }
-            catch
+            catch (Exception) when (_options.FailMode == FailMode.Closed)
             {
-                // Guard error - continue with next guard (FailMode.Open behavior)
+                return (GuardErrorVerdict(guard), false);
+            }
+            catch (Exception)
+            {
+                // FailMode.Open: the guard is skipped
             }
         }
 
@@ -186,9 +203,13 @@ public sealed class StreamingGuardOrchestrator
             {
                 throw;
             }
-            catch
+            catch (Exception) when (_options.FailMode == FailMode.Closed)
             {
-                // Continue with next guard
+                return GuardErrorVerdict(guard);
+            }
+            catch (Exception)
+            {
+                // FailMode.Open: the guard is skipped
             }
         }
 
@@ -214,14 +235,21 @@ public sealed class StreamingGuardOrchestrator
             {
                 throw;
             }
-            catch
+            catch (Exception) when (_options.FailMode == FailMode.Closed)
             {
-                // Continue with next guard
+                return GuardErrorVerdict(guard);
+            }
+            catch (Exception)
+            {
+                // FailMode.Open: the guard is skipped
             }
         }
 
         return TokenValidation.Safe;
     }
+
+    private static TokenValidation GuardErrorVerdict(IStreamingGuard guard) =>
+        TokenValidation.Terminate(guard.Name, 1.0, Severity.High, pattern: "GuardError");
 }
 
 /// <summary>
@@ -243,6 +271,12 @@ public sealed class StreamingGuardOptions
     /// Minimum chunk size for validation (default: 1)
     /// </summary>
     public int MinChunkSize { get; set; } = 1;
+
+    /// <summary>
+    /// What a guard that throws means (default: <see cref="Core.FailMode.Open"/> - the guard is skipped).
+    /// Under <see cref="Core.FailMode.Closed"/> the stream is terminated instead.
+    /// </summary>
+    public FailMode FailMode { get; set; } = FailMode.Open;
 }
 
 /// <summary>

@@ -37,7 +37,6 @@ public class OptionsReachabilityRosterTests
     {
         ["FluxGuard.SDK.AI.ChatClient.FluxGuardChatClientOptions"] = ["ValidateStreamingOutput"],
         ["FluxGuard.SDK.AspNetCore.Middleware.FluxGuardMiddlewareOptions"] = ["MaxBodySize"],
-        ["FluxGuard.Streaming.StreamingGuardOptions"] = ["MinChunkSize"],
     };
 
     [Fact]
