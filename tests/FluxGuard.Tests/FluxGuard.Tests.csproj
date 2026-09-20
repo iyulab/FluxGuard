@@ -23,11 +23,13 @@
     <PackageReference Include="coverlet.MTP" />
     <PackageReference Include="AwesomeAssertions" />
     <PackageReference Include="NSubstitute" />
+    <PackageReference Include="Iyu.Conventions.Testing" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FluxGuard\FluxGuard.csproj" />
     <ProjectReference Include="..\..\src\FluxGuard.SDK\FluxGuard.SDK.csproj" />
+    <ProjectReference Include="..\..\src\FluxGuard.Remote\FluxGuard.Remote.csproj" />
   </ItemGroup>
 
 </Project>
