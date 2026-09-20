@@ -13,7 +13,6 @@ public class RemoteGuardOptionsTests
 
         options.Enabled.Should().BeTrue();
         options.TimeoutMs.Should().Be(5000);
-        options.MaxRetries.Should().Be(1);
         options.EnableCache.Should().BeTrue();
         options.CacheTtlSeconds.Should().Be(3600);
         options.MaxCacheEntries.Should().Be(10000);
@@ -34,7 +33,6 @@ public class RemoteGuardOptionsTests
         {
             Enabled = false,
             TimeoutMs = 10000,
-            MaxRetries = 3,
             EnableCache = false,
             CacheTtlSeconds = 7200,
             MaxCacheEntries = 5000
@@ -42,7 +40,6 @@ public class RemoteGuardOptionsTests
 
         options.Enabled.Should().BeFalse();
         options.TimeoutMs.Should().Be(10000);
-        options.MaxRetries.Should().Be(3);
         options.EnableCache.Should().BeFalse();
         options.CacheTtlSeconds.Should().Be(7200);
         options.MaxCacheEntries.Should().Be(5000);

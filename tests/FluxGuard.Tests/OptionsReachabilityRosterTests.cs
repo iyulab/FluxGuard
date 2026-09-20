@@ -35,8 +35,6 @@ public class OptionsReachabilityRosterTests
     /// </summary>
     private static readonly Dictionary<string, string[]> KnownUnread = new()
     {
-        ["FluxGuard.Remote.Configuration.LLMJudgeOptions"] = ["BlockThreshold"],
-        ["FluxGuard.Remote.Configuration.RemoteGuardOptions"] = ["MaxRetries"],
         ["FluxGuard.SDK.AI.ChatClient.FluxGuardChatClientOptions"] = ["ValidateStreamingOutput"],
         ["FluxGuard.SDK.AspNetCore.Middleware.FluxGuardMiddlewareOptions"] = ["MaxBodySize"],
         ["FluxGuard.Streaming.StreamingGuardOptions"] = ["MinChunkSize"],

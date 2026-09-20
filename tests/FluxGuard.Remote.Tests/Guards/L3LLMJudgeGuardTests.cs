@@ -109,25 +109,6 @@ public class L3LLMJudgeGuardTests
     }
 
     [Fact]
-    public async Task CheckInputAsync_ServiceFails_ReturnsPass()
-    {
-        // Arrange
-        var context = new GuardContext { OriginalInput = "test input" };
-        var l2Result = GuardResult.Pass("test", 0);
-
-        _completionService
-            .CompleteAsync(Arg.Any<CompletionRequest>(), Arg.Any<CancellationToken>())
-            .Returns(CompletionResponse.Fail("API error"));
-
-        // Act
-        var result = await _guard.CheckInputAsync(context, l2Result, TestContext.Current.CancellationToken);
-
-        // Assert
-        result.Passed.Should().BeTrue();
-        result.Reasoning.Should().Contain("unavailable");
-    }
-
-    [Fact]
     public async Task CheckInputAsync_CachedResult_ReturnsCached()
     {
         // Arrange
@@ -178,25 +159,6 @@ public class L3LLMJudgeGuardTests
 
         // Assert
         result.Passed.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task CheckInputAsync_InvalidJson_ReturnsPass()
-    {
-        // Arrange
-        var context = new GuardContext { OriginalInput = "test" };
-        var l2Result = GuardResult.Pass("test", 0);
-
-        _completionService
-            .CompleteAsync(Arg.Any<CompletionRequest>(), Arg.Any<CancellationToken>())
-            .Returns(CompletionResponse.Ok("not valid json"));
-
-        // Act
-        var result = await _guard.CheckInputAsync(context, l2Result, TestContext.Current.CancellationToken);
-
-        // Assert
-        result.Passed.Should().BeTrue();
-        result.Reasoning.Should().Contain("Parse error");
     }
 
     [Fact]

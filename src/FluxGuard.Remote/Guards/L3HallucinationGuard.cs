@@ -119,8 +119,8 @@ public sealed partial class L3HallucinationGuard : IOutputGuard
         {
             LogHallucinationCheckFailed(_logger, ex, context.RequestId);
 
-            // Fail open
-            return GuardCheckResult.Pass(Name, "Hallucination check unavailable");
+            // A check that cannot run is a guard error: the pipeline's FailMode decides whether that passes.
+            throw;
         }
     }
 

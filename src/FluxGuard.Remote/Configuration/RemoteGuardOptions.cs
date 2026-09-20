@@ -21,11 +21,6 @@ public sealed class RemoteGuardOptions
     public int TimeoutMs { get; set; } = 5000;
 
     /// <summary>
-    /// Maximum retries on failure (default: 1)
-    /// </summary>
-    public int MaxRetries { get; set; } = 1;
-
-    /// <summary>
     /// Whether to enable semantic caching (default: true)
     /// </summary>
     public bool EnableCache { get; set; } = true;
@@ -72,7 +67,8 @@ public sealed class LLMJudgeOptions
     public int MaxTokens { get; set; } = 256;
 
     /// <summary>
-    /// Confidence threshold for block decision (default: 0.8)
+    /// An "unsafe" verdict blocks when its confidence is at or above this (default: 0.8). Below it the verdict is
+    /// reported - score, severity, reasoning - without blocking. A verdict that carries no confidence blocks.
     /// </summary>
     public double BlockThreshold { get; set; } = 0.8;
 

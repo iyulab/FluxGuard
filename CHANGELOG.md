@@ -27,11 +27,26 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   `L2GuardOptions.TimeoutMs` (`FluxGuardOptions.GuardTimeoutMs` bounds every guard).
   Migration: delete the assignment. If you set `EnableToxicity = false` or `EnableContentPolicy = false` to turn a
   guard off, it was never on.
+- **Breaking: `RemoteGuardOptions.MaxRetries` is removed.** Nothing retried. Retries belong to the `HttpClient`
+  pipeline (or to your own `IRemoteLlmService`), where the host already configures resilience.
 - **Breaking: `ModelLoader.DownloadMissingModelsAsync`, `ModelDownloadProgress` and `DownloadStatus` are removed.**
   The method downloaded nothing and returned `false`.
 
 ### Fixed
 
+- **`LLMJudgeOptions.BlockThreshold` (and `WithBlockThreshold(...)`) now decides what blocks.** Nothing read it: any
+  "unsafe" verdict from the judge blocked, whatever its confidence. An unsafe verdict now blocks when its confidence
+  is at or above the threshold (0.8 by default); below it the verdict is still reported - score, severity and
+  reasoning reach `TriggeredGuards` - without blocking. A verdict that carries no confidence blocks, as before.
+  **Behavior change:** an unsafe verdict with a confidence under 0.8 used to block and now flags. Lower the
+  threshold to keep the old behavior (`0` blocks every unsafe verdict).
+- **The L3 guards answered "pass" whenever they could not run.** `L3LLMJudgeGuard` (judge unreachable, empty or
+  unparseable reply), `L3HallucinationGuard` and `L3RAGSecurityGuard` (any exception) each "failed open" on their
+  own, so a pipeline configured with `FailMode.Closed` never saw the failure. They now throw and the pipeline's
+  `FailMode` decides. The judge also cached the "pass" it invented for an unparseable reply, so the same input
+  kept passing for the cache lifetime; a failed call is no longer cached.
+  **Behavior change:** under `FailMode.Closed`, an unreachable judge or detector now blocks. Under `FailMode.Open`
+  the outcome is the same as before.
 - **The L2 guards answered "safe" whenever they could not run** - model not registered, inference failure, any
   exception - whatever the fail mode. They now throw, so the pipeline's `FailMode` decides: skipped and reported to
   `OnGuardErrorAsync` under `FailMode.Open`, blocking under `FailMode.Closed`.

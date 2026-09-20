@@ -91,8 +91,8 @@ public sealed partial class L3LLMJudgeGuard : IRemoteGuard
         {
             LogJudgeFailed(_logger, context.RequestId, response.Error);
 
-            // Return pass on failure (FailMode.Open)
-            return RemoteGuardResult.Pass(stopwatch.Elapsed.TotalMilliseconds, "Judge unavailable");
+            // A judge that cannot answer is a guard error: the pipeline's FailMode decides whether that passes.
+            throw new InvalidOperationException($"{Name}: the judge did not answer - {response.Error ?? "empty response"}");
         }
 
         var result = ParseJudgeResponse(response.Content, response.Model, stopwatch.Elapsed.TotalMilliseconds);
@@ -139,7 +139,7 @@ public sealed partial class L3LLMJudgeGuard : IRemoteGuard
         {
             LogOutputJudgeFailed(_logger, context.RequestId, response.Error);
 
-            return RemoteGuardResult.Pass(stopwatch.Elapsed.TotalMilliseconds, "Judge unavailable");
+            throw new InvalidOperationException($"{Name}: the judge did not answer - {response.Error ?? "empty response"}");
         }
 
         var result = ParseJudgeResponse(response.Content, response.Model, stopwatch.Elapsed.TotalMilliseconds);
@@ -155,14 +155,19 @@ public sealed partial class L3LLMJudgeGuard : IRemoteGuard
             var parsed = JsonSerializer.Deserialize<JudgeResponse>(content, JsonOptions);
             if (parsed is null)
             {
-                return RemoteGuardResult.Pass(latencyMs, "Failed to parse response");
+                throw new InvalidOperationException($"{Name}: the judge's reply was empty JSON.");
             }
 
             var severity = JudgePromptTemplate.ParseSeverity(parsed.Severity);
             var isSafe = parsed.IsSafe ?? (parsed.Confidence < _options.FlagThreshold);
             var score = parsed.Confidence ?? 0.0;
 
-            if (isSafe)
+            // An unsafe verdict blocks at or above BlockThreshold. Below it the verdict is kept - score, severity and
+            // reasoning reach the result - but does not block. A verdict with no confidence has nothing to compare, so
+            // it stands.
+            var blocks = !isSafe && (parsed.Confidence is null || parsed.Confidence >= _options.BlockThreshold);
+
+            if (!blocks)
             {
                 return new RemoteGuardResult
                 {
@@ -190,7 +195,7 @@ public sealed partial class L3LLMJudgeGuard : IRemoteGuard
         catch (JsonException ex)
         {
             LogJudgeParseError(_logger, ex, content);
-            return RemoteGuardResult.Pass(latencyMs, "Parse error");
+            throw new InvalidOperationException($"{Name}: the judge's reply could not be parsed.", ex);
         }
     }
 

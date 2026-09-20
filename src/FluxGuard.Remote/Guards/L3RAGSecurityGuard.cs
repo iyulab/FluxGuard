@@ -122,8 +122,8 @@ public sealed partial class L3RAGSecurityGuard : IInputGuard
         {
             LogRAGSecurityCheckFailed(_logger, ex, context.RequestId);
 
-            // Fail open
-            return GuardCheckResult.Pass(Name, "RAG security check unavailable");
+            // A check that cannot run is a guard error: the pipeline's FailMode decides whether that passes.
+            throw;
         }
     }
 
