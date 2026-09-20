@@ -3,47 +3,81 @@ using System.Globalization;
 namespace FluxGuard.L2.ML;
 
 /// <summary>
-/// Wrapper for tokenizer operations with fallback support
-/// Uses simple word-piece tokenization as fallback when BERT tokenizer is not available
+/// Word-piece tokenization against a BERT-style vocabulary file.
 /// </summary>
+/// <remarks>
+/// A tokenizer without its vocabulary is not a degraded tokenizer, it is a different function, so
+/// construction fails rather than substituting one. The wrapper used to hash each word into an id
+/// when the vocabulary could not be read; the model then scored arbitrary ids and the guard
+/// returned that as a verdict. Worse, .NET randomises string hash codes per process, so those ids
+/// - and the verdicts built on them - changed from run to run.
+/// </remarks>
 public sealed class TokenizerWrapper : IDisposable
 {
     private readonly int _maxLength;
-    private readonly Dictionary<string, int>? _vocabulary;
+    private readonly Dictionary<string, int> _vocabulary;
     private bool _disposed;
 
     /// <summary>
-    /// Gets whether the tokenizer vocabulary is loaded
+    /// Creates a tokenizer wrapper from a vocabulary file.
     /// </summary>
-    public bool IsVocabularyLoaded => _vocabulary is not null;
-
-    /// <summary>
-    /// Creates a tokenizer wrapper from a vocabulary file
-    /// </summary>
+    /// <param name="vocabPath">Path to a BERT-style vocabulary file, one token per line.</param>
+    /// <param name="maxLength">Maximum sequence length, including the special tokens.</param>
+    /// <exception cref="ArgumentException"><paramref name="vocabPath"/> is null or empty.</exception>
+    /// <exception cref="FileNotFoundException">No file exists at <paramref name="vocabPath"/>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// The file cannot be read, or holds no usable token.
+    /// </exception>
     public TokenizerWrapper(string vocabPath, int maxLength = 512)
     {
-        _maxLength = maxLength;
+        ArgumentException.ThrowIfNullOrWhiteSpace(vocabPath);
 
-        if (!string.IsNullOrEmpty(vocabPath) && File.Exists(vocabPath))
+        if (!File.Exists(vocabPath))
         {
-            try
-            {
-                _vocabulary = LoadVocabulary(vocabPath);
-            }
-            catch (Exception)
-            {
-                // Vocabulary loading failed, will use fallback
-                _vocabulary = null;
-            }
+            throw new FileNotFoundException(
+                $"The L2 tokenizer vocabulary was not found at '{vocabPath}'. L2 guards need their model files; " +
+                "place them under the models directory or set L2GuardOptions.ModelsBasePath.",
+                vocabPath);
         }
+
+        Dictionary<string, int> vocabulary;
+        try
+        {
+            vocabulary = LoadVocabulary(vocabPath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new InvalidOperationException(
+                $"The L2 tokenizer vocabulary at '{vocabPath}' could not be read.", ex);
+        }
+
+        if (vocabulary.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"The L2 tokenizer vocabulary at '{vocabPath}' holds no tokens. Every word would be unknown, " +
+                "so the model's scores would carry no information.");
+        }
+
+        _vocabulary = vocabulary;
+        _maxLength = maxLength;
     }
 
     /// <summary>
-    /// Creates a tokenizer wrapper with a pre-loaded vocabulary
+    /// Creates a tokenizer wrapper with a pre-loaded vocabulary.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="vocabulary"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="vocabulary"/> is empty.</exception>
     public TokenizerWrapper(Dictionary<string, int> vocabulary, int maxLength = 512)
     {
-        _vocabulary = vocabulary ?? throw new ArgumentNullException(nameof(vocabulary));
+        ArgumentNullException.ThrowIfNull(vocabulary);
+
+        if (vocabulary.Count == 0)
+        {
+            throw new ArgumentException(
+                "The tokenizer vocabulary is empty; every word would be unknown.", nameof(vocabulary));
+        }
+
+        _vocabulary = vocabulary;
         _maxLength = maxLength;
     }
 
@@ -59,12 +93,7 @@ public sealed class TokenizerWrapper : IDisposable
             return CreateEmptyInput();
         }
 
-        if (_vocabulary is not null)
-        {
-            return TokenizeWithVocabulary(text);
-        }
-
-        return CreateFallbackInput(text);
+        return TokenizeWithVocabulary(text);
     }
 
     /// <summary>
@@ -81,7 +110,7 @@ public sealed class TokenizerWrapper : IDisposable
         var tokens = new List<int>();
 
         // Add [CLS] token
-        if (_vocabulary!.TryGetValue("[CLS]", out var clsId))
+        if (_vocabulary.TryGetValue("[CLS]", out var clsId))
         {
             tokens.Add(clsId);
         }
@@ -130,26 +159,6 @@ public sealed class TokenizerWrapper : IDisposable
             AttentionMask = new long[_maxLength],
             SequenceLength = 0
         };
-    }
-
-    private TokenizedInput CreateFallbackInput(string text)
-    {
-        // Simple character-based fallback tokenization
-        var tokens = text.ToLowerInvariant()
-            .Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries)
-            .Take(_maxLength)
-            .ToArray();
-
-        var tokenIds = new List<int>();
-
-        foreach (var token in tokens)
-        {
-            // Simple hash-based token ID
-            var hashCode = token.GetHashCode(StringComparison.Ordinal);
-            tokenIds.Add(Math.Abs(hashCode) % 30000 + 1000);
-        }
-
-        return CreatePaddedInput(tokenIds);
     }
 
     private TokenizedInput CreatePaddedInput(List<int> tokenIds)

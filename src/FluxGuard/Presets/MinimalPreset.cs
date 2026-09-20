@@ -9,7 +9,7 @@ namespace FluxGuard.Presets;
 /// <summary>
 /// Minimal preset configuration
 /// L1 (Regex) only - fastest, lowest latency
-/// Latency: &lt;1ms, Throughput: 100K+ req/s
+/// L1 only: regex and string checks, in process.
 /// </summary>
 public static class MinimalPreset
 {

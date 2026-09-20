@@ -4,6 +4,40 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.17.0
+
+### Fixed
+
+- **The L2 tokenizer no longer invents tokens when it cannot read its vocabulary.** `TokenizerWrapper` fell back to
+  hashing each whitespace-separated word into an id (`Math.Abs(word.GetHashCode()) % 30000 + 1000`) whenever the
+  vocabulary file was missing, empty or unreadable, and the classification model then scored those ids, which the guard
+  returned as an ordinary verdict. .NET randomises string hash codes **per process**, so those scores were not even
+  reproducible between runs. Construction now throws and names the file: a missing path (`FileNotFoundException`), an
+  empty path (`ArgumentException`), an unreadable file or one holding no usable token (`InvalidOperationException`).
+  This closes the last hole in 0.16.0's rule that L2 explicitly turned on but unable to run is an error rather than a
+  pass — `AddL2Guards` checked that the model files *exist*, not that they parse, and a guard built by hand skipped
+  even that check.
+- **The README no longer states latency and throughput that were never measured.** The Performance table's figures were
+  design targets copied from `docs/ROADMAP.md`; no benchmark ships with this repository. Six XML doc comments repeated
+  them on `GuardPreset` and the three presets, and those are corrected too.
+- **The README said the presets include L2.** "Standard (L1+L2)" and "Core guardrails (L1+L2)" contradicted 0.16.0,
+  where no preset registers an L2 guard and `AddL2Guards` is the one call that does. The Packages table now says which
+  layer lives in which package and that L2 is opt-in.
+
+### Changed
+
+- **Breaking: `FluxGuard.SDK` takes the ASP.NET Core shared framework** (`FrameworkReference Microsoft.AspNetCore.App`)
+  instead of the `Microsoft.AspNetCore.Http` 2.3.x package. That package is a re-release of the previous generation:
+  next to a host that already carries the shared framework, the same types can resolve from two places, and the two are
+  serviced on separate schedules. Middleware consumers are unaffected. A consumer using only `FluxGuardChatClient` from
+  a non-ASP.NET app now needs the ASP.NET Core runtime — say so if that is you, because splitting the
+  Microsoft.Extensions.AI integration into its own package is the answer if anyone is in that position.
+
+### Removed
+
+- **Breaking: `TokenizerWrapper.IsVocabularyLoaded`.** It had no callers, and after the change above it can only be
+  true.
+
 ## 0.16.0
 
 ### Added

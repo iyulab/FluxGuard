@@ -9,7 +9,7 @@ namespace FluxGuard.Presets;
 /// <summary>
 /// Standard preset configuration
 /// L1 (Regex) + L2 (ML) guards enabled
-/// Latency: 5-20ms, Throughput: 5K req/s
+/// L1 only, with the fuller guard set. No preset registers L2 - see <c>AddL2Guards</c>.
 /// </summary>
 public static class StandardPreset
 {

@@ -486,19 +486,22 @@ type's property names.
 
 ## Performance
 
-| Preset | Latency | Throughput |
-|--------|---------|------------|
-| Minimal (L1) | <1ms | 100K+ req/s |
-| Standard (L1+L2) | 5-20ms | 5K req/s |
-| + Remote (L3) | 50-200ms | 500 req/s |
+No benchmark ships with this repository, so this README states no latency or throughput figures.
+The numbers that used to sit here were design targets from [docs/ROADMAP.md](docs/ROADMAP.md), and
+they were never measured. What is true of the shape: the L1 guards are regex and string work in
+process, L2 runs an ONNX model per check, and L3 makes a network call to a model provider — so the
+three layers differ by orders of magnitude, and only L1 is in every preset.
 
 ## Packages
 
 | Package | Description | Dependencies |
 |---------|-------------|--------------|
-| `FluxGuard` | Core guardrails (L1+L2) | ONNX Runtime |
+| `FluxGuard` | L1 guardrails (all presets) and the L2 ONNX guards (opt-in via `AddL2Guards`) | ONNX Runtime |
 | `FluxGuard.Remote` | Remote analysis (L3) | FluxGuard, HTTP |
 | `FluxGuard.SDK` | Framework integrations | FluxGuard, ASP.NET Core, MEAI |
+
+The L2 guards live in the `FluxGuard` package but **no preset registers them** — they need model
+files on disk, so they are an explicit `builder.AddL2Guards(sessionManager)` call.
 
 ## License
 

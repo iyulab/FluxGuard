@@ -9,7 +9,7 @@ namespace FluxGuard.Presets;
 /// <summary>
 /// Strict preset configuration
 /// L1 (Regex) + L2 (ML) + enhanced thresholds
-/// Latency: 10-30ms, Throughput: 3K req/s
+/// L1 only, with the strictest thresholds. No preset registers L2 - see <c>AddL2Guards</c>.
 /// </summary>
 public static class StrictPreset
 {

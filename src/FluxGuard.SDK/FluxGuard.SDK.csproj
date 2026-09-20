@@ -10,10 +10,22 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Http" />
+    <!--
+      The shared framework, not the Microsoft.AspNetCore.Http 2.x package. That package is a
+      re-release of the previous generation: taking it alongside a host that already carries
+      Microsoft.AspNetCore.App means the same types can resolve from two places, and the two are
+      serviced on separate schedules.
+    -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Microsoft.Extensions.Logging.Abstractions and Microsoft.Extensions.Options are not listed:
+      the shared framework above already carries them, and NuGet reports pinning them as redundant
+      (NU1510).
+    -->
     <PackageReference Include="Microsoft.Extensions.AI" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>
 
 </Project>
