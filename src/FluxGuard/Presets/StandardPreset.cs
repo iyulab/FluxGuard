@@ -17,28 +17,7 @@ public static class StandardPreset
     /// Apply standard preset to builder
     /// </summary>
     public static FluxGuardBuilder ApplyStandardPreset(this FluxGuardBuilder builder)
-    {
-        var registry = new PatternRegistry();
-        var options = new FluxGuardOptions { Preset = Core.GuardPreset.Standard };
-
-        // Add L1 input guards
-        builder.AddInputGuard(new L1EncodingBypassGuard(registry, options.InputGuards.EnableEncodingBypass));
-        builder.AddInputGuard(new L1PromptInjectionGuard(registry, options.InputGuards.EnablePromptInjection));
-        builder.AddInputGuard(new L1JailbreakGuard(registry, options.InputGuards.EnableJailbreak));
-        builder.AddInputGuard(new L1PIIExposureGuard(
-            registry,
-            options.InputGuards.EnablePIIExposure,
-            options.InputGuards.SupportedLanguages.ToList()));
-
-        // Add L1 output guards
-        builder.AddOutputGuard(new L1PIILeakageGuard(
-            registry,
-            options.OutputGuards.EnablePIILeakage,
-            options.InputGuards.SupportedLanguages.ToList()));
-        builder.AddOutputGuard(new L1RefusalGuard(options.OutputGuards.EnableRefusal));
-
-        return builder;
-    }
+        => builder.RequestPreset(Core.GuardPreset.Standard);
 
     /// <summary>
     /// Get default input guards for standard preset

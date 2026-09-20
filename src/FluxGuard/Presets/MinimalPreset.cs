@@ -18,14 +18,7 @@ public static class MinimalPreset
     /// </summary>
     public static FluxGuardBuilder ApplyMinimalPreset(this FluxGuardBuilder builder)
     {
-        var registry = new PatternRegistry();
-
-        // Only critical L1 guards
-        builder.AddInputGuard(new L1PromptInjectionGuard(registry));
-        builder.AddInputGuard(new L1JailbreakGuard(registry));
-
-        // Minimal output guards
-        builder.AddOutputGuard(new L1PIILeakageGuard(registry));
+        builder.RequestPreset(Core.GuardPreset.Minimal);
 
         // Disable L2 guards
         builder.DisableL2Guards();

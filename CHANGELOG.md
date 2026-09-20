@@ -16,6 +16,16 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   hooks as any other.
   **Behavior change:** the defaults are 128,000 characters each, so a consumer that never set them will start
   blocking text longer than that. Set the option to `0` for no limit.
+- **`FluxGuard.Create()` built a pipeline with no guards.** It is documented as the standard preset, but nothing
+  applied a preset on the builder path, so every check passed. `WithPreset(...)` had the same fate: it stored a
+  value nothing read. A builder that is given no guard and no preset now gets the preset named by
+  `FluxGuardOptions.Preset` (standard by default); `WithPreset` applies the preset it names; a builder that is
+  given guards and no preset still gets exactly those guards.
+  **Behavior change:** code that relied on `FluxGuard.Create()` never blocking will now see the standard guards.
+- **`ApplyStandardPreset()` / `ApplyStrictPreset()` ignored switches configured on the builder.** They read a fresh
+  default options object, so `ConfigureInputGuards(o => o.EnablePromptInjection = false)` had no effect on the
+  guards they added. The preset's guards are now created when the pipeline is built, from the builder's final
+  options, whichever order the calls came in. The builder and `AddFluxGuard(...)` share that one path.
 - The README's builder example called members that do not exist (`WithInputGuards`, `WithOutputGuards`,
   `PIIMaskingPattern`, `RateLimit.RequestsPerMinute`). It now uses the API as it is.
 

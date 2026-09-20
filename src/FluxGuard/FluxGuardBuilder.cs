@@ -2,6 +2,8 @@ using FluxGuard.Abstractions;
 using FluxGuard.Configuration;
 using FluxGuard.Core;
 using FluxGuard.Hooks;
+using FluxGuard.L1.Patterns;
+using FluxGuard.Presets;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -19,6 +21,8 @@ public sealed class FluxGuardBuilder
     private readonly List<IRemoteGuard> _remoteGuards = [];
     private IFluxGuardHooks _hooks = new FluxGuardHooks();
     private ILoggerFactory _loggerFactory = NullLoggerFactory.Instance;
+    private GuardPreset? _requestedPreset;
+    private IPatternRegistry? _patternRegistry;
 
     /// <summary>
     /// Create new builder instance
@@ -32,7 +36,7 @@ public sealed class FluxGuardBuilder
     /// <returns>Builder instance</returns>
     public FluxGuardBuilder WithPreset(GuardPreset preset)
     {
-        _options.Preset = preset;
+        RequestPreset(preset);
         return this;
     }
 
@@ -184,9 +188,43 @@ public sealed class FluxGuardBuilder
     /// Build FluxGuard instance
     /// </summary>
     /// <returns>FluxGuard instance</returns>
+    /// <remarks>
+    /// A requested preset (<see cref="WithPreset"/> or one of the <c>Apply…Preset</c> extensions) is turned into guards
+    /// here, from the options as they stand when the pipeline is built - so a switch configured before or after the
+    /// preset was requested reaches its guard either way. A builder that was given no input or output guard and no
+    /// preset gets the preset named by <see cref="FluxGuardOptions.Preset"/> (standard by default): the default is a
+    /// guarded pipeline, never an empty one. A builder given guards and no preset gets exactly those guards.
+    /// </remarks>
     public IFluxGuard Build()
     {
-        return new FluxGuardCore(_options, _inputGuards, _outputGuards, _remoteGuards, _hooks, _loggerFactory);
+        var inputGuards = new List<IInputGuard>(_inputGuards);
+        var outputGuards = new List<IOutputGuard>(_outputGuards);
+
+        var preset = _requestedPreset
+            ?? (_inputGuards.Count == 0 && _outputGuards.Count == 0 ? _options.Preset : (GuardPreset?)null);
+        if (preset is { } requested)
+        {
+            var registry = _patternRegistry ?? new PatternRegistry();
+            inputGuards.AddRange(PresetGuards.InputGuards(requested, registry, _options));
+            outputGuards.AddRange(PresetGuards.OutputGuards(requested, registry, _options));
+        }
+
+        return new FluxGuardCore(_options, inputGuards, outputGuards, _remoteGuards, _hooks, _loggerFactory);
+    }
+
+    /// <summary>Asks for a preset's guards; they are created in <see cref="Build"/> from the final options.</summary>
+    internal FluxGuardBuilder RequestPreset(GuardPreset preset)
+    {
+        _options.Preset = preset;
+        _requestedPreset = preset;
+        return this;
+    }
+
+    /// <summary>Uses a shared pattern registry (the dependency-injection path) instead of a private one.</summary>
+    internal FluxGuardBuilder WithPatternRegistry(IPatternRegistry registry)
+    {
+        _patternRegistry = registry;
+        return this;
     }
 
     internal FluxGuardOptions GetOptions() => _options;

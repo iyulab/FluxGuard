@@ -18,37 +18,7 @@ public static class StrictPreset
     /// </summary>
     public static FluxGuardBuilder ApplyStrictPreset(this FluxGuardBuilder builder)
     {
-        var registry = new PatternRegistry();
-        var options = new FluxGuardOptions { Preset = Core.GuardPreset.Strict };
-
-        // All L1 input guards with lower thresholds
-        builder.AddInputGuard(new L1EncodingBypassGuard(
-            registry,
-            isEnabled: true,
-            invisibleCharThreshold: 3,  // Stricter
-            homoglyphThreshold: 5));    // Stricter
-
-        builder.AddInputGuard(new L1PromptInjectionGuard(
-            registry,
-            isEnabled: true,
-            escalationThreshold: 0.3)); // Lower threshold
-
-        builder.AddInputGuard(new L1JailbreakGuard(
-            registry,
-            isEnabled: true,
-            escalationThreshold: 0.3)); // Lower threshold
-
-        builder.AddInputGuard(new L1PIIExposureGuard(
-            registry,
-            isEnabled: true,
-            options.InputGuards.SupportedLanguages.ToList()));
-
-        // All output guards
-        builder.AddOutputGuard(new L1PIILeakageGuard(
-            registry,
-            isEnabled: true,
-            options.InputGuards.SupportedLanguages.ToList()));
-        builder.AddOutputGuard(new L1RefusalGuard(true));
+        builder.RequestPreset(Core.GuardPreset.Strict);
 
         // Configure stricter thresholds
         builder.Configure(opts =>

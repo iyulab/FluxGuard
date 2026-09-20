@@ -61,8 +61,9 @@ public static class ServiceCollectionExtensions
                 .WithHooks(hooks)
                 .WithLogging(loggerFactory);
 
-            // Apply preset-based guards
-            ApplyPresetGuards(builder, registry, options);
+            // The preset's guards are created in Build(), from these options and this registry - the same
+            // path a hand-built FluxGuardBuilder takes.
+            builder.WithPatternRegistry(registry).RequestPreset(options.Preset);
 
             // Register L3 remote guards from DI container
             foreach (var remoteGuard in sp.GetServices<IRemoteGuard>())
@@ -117,37 +118,5 @@ public static class ServiceCollectionExtensions
         });
 
         return services;
-    }
-
-    private static void ApplyPresetGuards(
-        FluxGuardBuilder builder,
-        IPatternRegistry registry,
-        FluxGuardOptions options)
-    {
-        switch (options.Preset)
-        {
-            case GuardPreset.Minimal:
-                foreach (var guard in MinimalPreset.GetInputGuards(registry))
-                    builder.AddInputGuard(guard);
-                foreach (var guard in MinimalPreset.GetOutputGuards(registry))
-                    builder.AddOutputGuard(guard);
-                break;
-
-            case GuardPreset.Standard:
-                foreach (var guard in StandardPreset.GetInputGuards(registry, options.InputGuards))
-                    builder.AddInputGuard(guard);
-                foreach (var guard in StandardPreset.GetOutputGuards(
-                    registry, options.OutputGuards, options.InputGuards.SupportedLanguages))
-                    builder.AddOutputGuard(guard);
-                break;
-
-            case GuardPreset.Strict:
-                foreach (var guard in StrictPreset.GetInputGuards(registry, options.InputGuards))
-                    builder.AddInputGuard(guard);
-                foreach (var guard in StrictPreset.GetOutputGuards(
-                    registry, options.OutputGuards, options.InputGuards.SupportedLanguages))
-                    builder.AddOutputGuard(guard);
-                break;
-        }
     }
 }
