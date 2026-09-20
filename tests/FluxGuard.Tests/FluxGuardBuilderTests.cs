@@ -34,8 +34,7 @@ public class FluxGuardBuilderTests
     {
         // Act
         var guard = FluxGuard.Create(builder => builder
-            .WithPreset(GuardPreset.Minimal)
-            .DisableL2Guards());
+            .WithPreset(GuardPreset.Minimal));
 
         // Assert
         guard.Should().NotBeNull();

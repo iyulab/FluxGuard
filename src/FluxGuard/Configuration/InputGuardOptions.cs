@@ -26,16 +26,6 @@ public sealed class InputGuardOptions
     public bool EnablePIIExposure { get; set; } = true;
 
     /// <summary>
-    /// Enable rate limit guard (default: false)
-    /// </summary>
-    public bool EnableRateLimit { get; set; }
-
-    /// <summary>
-    /// Enable content policy guard (default: true)
-    /// </summary>
-    public bool EnableContentPolicy { get; set; } = true;
-
-    /// <summary>
     /// Supported languages list (default: all 10 languages)
     /// </summary>
     public IList<string> SupportedLanguages { get; set; } =

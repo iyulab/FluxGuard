@@ -111,33 +111,34 @@ Not part of any preset: the L2 (local ML) guards and L3 (remote) guards are adde
 | Layer | Location | Latency | Default |
 |-------|----------|---------|---------|
 | **L1** | Local | <1ms | ✅ ON (presets register these) |
-| **L2** | Local | 5-20ms | ❌ OFF — no preset registers them; add `L2PromptInjectionGuard` / `L2ToxicityGuard` with `AddInputGuard` / `AddOutputGuard` (they need an `OnnxSessionManager` and the model files) |
+| **L2** | Local | 5-20ms | ❌ OFF — no preset registers them; `builder.AddL2Guards(sessionManager)` adds them on top of the preset. They need an `OnnxSessionManager` and the model files, and the call throws if a file is missing |
 | **L3** | Remote | 50-200ms | ❌ OFF (opt-in) |
 
-## Default Guards (All ON)
+## Guards
 
 ### Input Guards
 
-| Guard | Description | Layer |
-|-------|-------------|-------|
-| `PromptInjection` | Instruction override detection | L1+L2 |
-| `Jailbreak` | DAN, AIM persona attack blocking | L1 |
-| `EncodingBypass` | Base64, Unicode bypass detection | L1 |
-| `PIIExposure` | PII detection in input | L1 |
-| `RateLimit` | Request frequency limiting | L1 |
-| `ContentPolicy` | Custom policy rules | L1 |
+| Guard | Description | Layer | On by default |
+|-------|-------------|-------|---------------|
+| `PromptInjection` | Instruction override detection | L1 | ✅ `EnablePromptInjection` |
+| `Jailbreak` | DAN, AIM persona attack blocking | L1 | ✅ `EnableJailbreak` |
+| `EncodingBypass` | Base64, Unicode bypass detection | L1 | ✅ `EnableEncodingBypass` |
+| `PIIExposure` | PII detection in input | L1 | ✅ `EnablePIIExposure` |
+| `L2.PromptInjection` | ML prompt-injection classifier | L2 | ❌ `AddL2Guards(...)` |
 
 ### Output Guards
 
-| Guard | Description | Layer |
-|-------|-------------|-------|
-| `Toxicity` | Harmful content filtering | L2 |
-| `PIILeakage` | PII masking in response | L1 |
-| `FormatCompliance` | JSON schema, length validation | L1 |
-| `Refusal` | Model refusal response detection | L1 |
-| `Hallucination` | Hallucination detection (context-based) | L2+**L3** |
+| Guard | Description | Layer | On by default |
+|-------|-------------|-------|---------------|
+| `PIILeakage` | PII detection in the response (detects and blocks; it does not rewrite the response) | L1 | ✅ `EnablePIILeakage` |
+| `Refusal` | Model refusal response detection | L1 | ✅ `EnableRefusal` |
+| `L2.Toxicity` | ML toxicity classifier | L2 | ❌ `AddL2Guards(...)` |
 
-> The L3 capability of `Hallucination` guard requires the `FluxGuard.Remote` package.
+Every guard is bounded by `GuardTimeoutMs` (5000 by default). A guard that throws or times out is a guard error:
+skipped under `FailMode.Open`, blocking under `FailMode.Closed`.
+
+Rate limiting is not part of this library; use the host's rate limiter (ASP.NET Core `RateLimiter`, or the gateway).
+Groundedness / hallucination checks live in the `FluxGuard.Remote` package.
 
 ## Configuration
 
@@ -185,8 +186,10 @@ services.AddFluxGuard();
 services.AddFluxGuard(opt =>
 {
     opt.FailMode = FailMode.Open;  // default for Minimal/Standard; Strict defaults to Closed
-    opt.LogLevel = GuardLogLevel.Warning;  // log blocks/errors only
+    opt.GuardTimeoutMs = 2000;     // how long the pipeline waits for one guard (default 5000)
 });
+
+// Log output follows the host's ILoggerFactory and its filters; the library has no log-level option of its own.
 ```
 
 ## Remote Guard (Optional)
@@ -458,33 +461,25 @@ Console.WriteLine($"Avg Latency: {stats.AvgLatencyMs:F1}ms");
   "FluxGuard": {
     "Preset": "Standard",
     "FailMode": "Open",
-    "LogLevel": "Warning",
-    "Input": {
+    "GuardTimeoutMs": 5000,
+    "InputGuards": {
       "EnablePromptInjection": true,
       "EnableJailbreak": true,
       "EnableEncodingBypass": true,
-      "EnablePII": true,
-      "EnableRateLimit": true,
-      "MaxInputLength": 8192,
-      "RateLimit": {
-        "RequestsPerMinute": 60,
-        "RequestsPerHour": 500
-      }
+      "EnablePIIExposure": true,
+      "MaxInputLength": 8192
     },
-    "Output": {
-      "EnableToxicity": true,
-      "EnablePII": true,
-      "EnableFormatCompliance": true,
+    "OutputGuards": {
+      "EnablePIILeakage": true,
+      "EnableRefusal": true,
       "MaxOutputLength": 4096
-    },
-    "Remote": {
-      "Enabled": false,
-      "EscalationThreshold": 0.7,
-      "TimeoutMs": 200
     }
   }
 }
 ```
+
+`services.AddFluxGuard(configuration)` binds the `FluxGuard` section to `FluxGuardOptions`, so the keys are that
+type's property names.
 
 ## Performance
 

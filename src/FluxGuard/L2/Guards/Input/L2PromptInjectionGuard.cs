@@ -95,11 +95,11 @@ public sealed class L2PromptInjectionGuard : IInputGuard, IDisposable
             return GuardCheckResult.Safe;
         }
 
-        // Check if model is available
+        // A guard that cannot run is a guard error: the pipeline's FailMode decides whether that skips or blocks.
+        // Answering "safe" here would let a missing model pass everything, FailMode.Closed included.
         if (!_sessionManager.IsModelRegistered(_modelId))
         {
-            // Model not available, skip L2 check
-            return GuardCheckResult.Safe;
+            throw new InvalidOperationException($"{Name}: model '{_modelId}' is not registered (model file missing?).");
         }
 
         var sw = Stopwatch.StartNew();
@@ -111,7 +111,7 @@ public sealed class L2PromptInjectionGuard : IInputGuard, IDisposable
 
             if (!result.Success)
             {
-                return GuardCheckResult.Safe;
+                throw new InvalidOperationException($"{Name}: inference failed - {result.ErrorMessage}");
             }
 
             var isInjection = result.Label == "injection";
@@ -152,10 +152,9 @@ public sealed class L2PromptInjectionGuard : IInputGuard, IDisposable
 
             return GuardCheckResult.Safe;
         }
-        catch (Exception)
+        finally
         {
-            // FailMode.Open - on error, pass through
-            return GuardCheckResult.Safe;
+            sw.Stop();
         }
     }
 
@@ -254,9 +253,4 @@ public class L2GuardOptions
     /// Threshold for flagging (0.3 default = low suspicion)
     /// </summary>
     public double FlagThreshold { get; set; } = 0.3;
-
-    /// <summary>
-    /// Maximum inference timeout in milliseconds
-    /// </summary>
-    public int TimeoutMs { get; set; } = 5000;
 }

@@ -38,8 +38,6 @@ dotnet add package FluxGuard.SDK     # For framework integrations
 │  │ ✅ Jailbreak    │                                        │
 │  │ ✅ Encoding     │                                        │
 │  │ ✅ PII          │                                        │
-│  │ ✅ RateLimit    │                                        │
-│  │ ✅ ContentPolicy│                                        │
 │  └───────┬────────┘                                         │
 │          │                                                  │
 │          ▼                                                  │
@@ -192,16 +190,13 @@ dotnet add package FluxGuard.SDK     # For framework integrations
 | `Jailbreak` | DAN, AIM persona attack blocking | L1 |
 | `EncodingBypass` | Base64, Unicode bypass detection | L1 |
 | `PIIExposure` | PII detection in input | L1 |
-| `RateLimit` | Request frequency limiting | L1 |
-| `ContentPolicy` | Custom policy rules | L1 |
 
 ### Output Guards
 
 | Guard | Description | Layer |
 |-------|-------------|-------|
 | `Toxicity` | Harmful content filtering | L2 |
-| `PIILeakage` | PII masking in response | L1 |
-| `FormatCompliance` | JSON schema, length validation | L1 |
+| `PIILeakage` | PII detection in response | L1 |
 | `Refusal` | Model refusal response detection | L1 |
 | `Hallucination` | Hallucination detection (context-based) | L2+L3 |
 

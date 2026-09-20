@@ -538,7 +538,6 @@ public class FluxGuardCoreTests
             .WithFailMode(FailMode.Closed)
             .WithBlockThreshold(0.8)
             .WithFlagThreshold(0.5)
-            .DisableL2Guards()
             .WithLogging(Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
 
         result.Should().BeSameAs(builder);
@@ -566,8 +565,8 @@ public class FluxGuardCoreTests
 
         builder.ConfigureOutputGuards(opts =>
         {
-            opts.EnablePIIMasking = true;
-            opts.PIIMaskChar = '#';
+            opts.EnablePIILeakage = false;
+            opts.MaxOutputLength = 4096;
         });
 
         builder.Build().Should().NotBeNull();

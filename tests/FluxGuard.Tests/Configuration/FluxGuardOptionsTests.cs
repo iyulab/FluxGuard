@@ -21,8 +21,6 @@ public class FluxGuardOptionsTests
 
         opts.Preset.Should().Be(GuardPreset.Standard);
         opts.FailMode.Should().Be(FailMode.Open);
-        opts.LogLevel.Should().Be(LogLevel.Warning);
-        opts.EnableL2Guards.Should().BeTrue();
         opts.EnableL3Escalation.Should().BeFalse();
         opts.BlockThreshold.Should().Be(0.9);
         opts.FlagThreshold.Should().Be(0.7);
@@ -54,8 +52,6 @@ public class FluxGuardOptionsTests
         {
             Preset = GuardPreset.Strict,
             FailMode = FailMode.Closed,
-            LogLevel = LogLevel.Debug,
-            EnableL2Guards = false,
             EnableL3Escalation = true,
             BlockThreshold = 0.8,
             FlagThreshold = 0.5,
@@ -66,8 +62,6 @@ public class FluxGuardOptionsTests
 
         opts.Preset.Should().Be(GuardPreset.Strict);
         opts.FailMode.Should().Be(FailMode.Closed);
-        opts.LogLevel.Should().Be(LogLevel.Debug);
-        opts.EnableL2Guards.Should().BeFalse();
         opts.EnableL3Escalation.Should().BeTrue();
         opts.BlockThreshold.Should().Be(0.8);
         opts.FlagThreshold.Should().Be(0.5);
@@ -88,8 +82,6 @@ public class InputGuardOptionsTests
         opts.EnableJailbreak.Should().BeTrue();
         opts.EnableEncodingBypass.Should().BeTrue();
         opts.EnablePIIExposure.Should().BeTrue();
-        opts.EnableRateLimit.Should().BeFalse();
-        opts.EnableContentPolicy.Should().BeTrue();
         opts.MaxInputLength.Should().Be(128000);
         opts.EnableUnicodeNormalization.Should().BeTrue();
         opts.EnableHomoglyphDetection.Should().BeTrue();
@@ -134,19 +126,7 @@ public class OutputGuardOptionsTests
         var opts = new OutputGuardOptions();
 
         opts.EnablePIILeakage.Should().BeTrue();
-        opts.EnableFormatCompliance.Should().BeFalse();
         opts.EnableRefusal.Should().BeTrue();
-        opts.EnableToxicity.Should().BeTrue();
         opts.MaxOutputLength.Should().Be(128000);
-        opts.EnablePIIMasking.Should().BeFalse();
-        opts.PIIMaskChar.Should().Be('*');
-    }
-
-    [Fact]
-    public void PIIMaskChar_IsSettable()
-    {
-        var opts = new OutputGuardOptions { PIIMaskChar = '#' };
-
-        opts.PIIMaskChar.Should().Be('#');
     }
 }

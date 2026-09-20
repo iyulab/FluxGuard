@@ -111,28 +111,6 @@ public static class ModelLoader
             ModelsDirectory = GetModelsDirectory(basePath)
         };
     }
-
-    /// <summary>
-    /// Downloads missing models from the default source
-    /// </summary>
-    public static async Task<bool> DownloadMissingModelsAsync(
-        string? basePath = null,
-        IProgress<ModelDownloadProgress>? progress = null,
-        CancellationToken cancellationToken = default)
-    {
-        // This is a placeholder for model download functionality
-        // In production, this would download from HuggingFace or a custom CDN
-        await Task.CompletedTask;
-
-        progress?.Report(new ModelDownloadProgress
-        {
-            ModelId = "all",
-            Status = DownloadStatus.NotAvailable,
-            Message = "Model download not yet implemented. Please manually place models in the models directory."
-        });
-
-        return false;
-    }
 }
 
 /// <summary>
@@ -159,61 +137,4 @@ public record ModelAvailability
     /// Whether all required models are available
     /// </summary>
     public bool AllModelsAvailable => PromptInjectionAvailable && ToxicityAvailable;
-}
-
-/// <summary>
-/// Model download progress information
-/// </summary>
-public record ModelDownloadProgress
-{
-    /// <summary>
-    /// Model being downloaded
-    /// </summary>
-    public required string ModelId { get; init; }
-
-    /// <summary>
-    /// Download status
-    /// </summary>
-    public DownloadStatus Status { get; init; }
-
-    /// <summary>
-    /// Progress percentage (0-100)
-    /// </summary>
-    public int ProgressPercent { get; init; }
-
-    /// <summary>
-    /// Status message
-    /// </summary>
-    public string? Message { get; init; }
-}
-
-/// <summary>
-/// Download status enum
-/// </summary>
-public enum DownloadStatus
-{
-    /// <summary>
-    /// Download pending
-    /// </summary>
-    Pending,
-
-    /// <summary>
-    /// Currently downloading
-    /// </summary>
-    Downloading,
-
-    /// <summary>
-    /// Download completed
-    /// </summary>
-    Completed,
-
-    /// <summary>
-    /// Download failed
-    /// </summary>
-    Failed,
-
-    /// <summary>
-    /// Download not available
-    /// </summary>
-    NotAvailable
 }

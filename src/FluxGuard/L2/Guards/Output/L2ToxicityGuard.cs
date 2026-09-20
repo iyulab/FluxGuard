@@ -98,10 +98,11 @@ public sealed class L2ToxicityGuard : IOutputGuard, IDisposable
             return GuardCheckResult.Safe;
         }
 
-        // Check if model is available
+        // A guard that cannot run is a guard error: the pipeline's FailMode decides whether that skips or blocks.
+        // Answering "safe" here would let a missing model pass everything, FailMode.Closed included.
         if (!_sessionManager.IsModelRegistered(_modelId))
         {
-            return GuardCheckResult.Safe;
+            throw new InvalidOperationException($"{Name}: model '{_modelId}' is not registered (model file missing?).");
         }
 
         var sw = Stopwatch.StartNew();
@@ -113,7 +114,7 @@ public sealed class L2ToxicityGuard : IOutputGuard, IDisposable
 
             if (!result.Success)
             {
-                return GuardCheckResult.Safe;
+                throw new InvalidOperationException($"{Name}: inference failed - {result.ErrorMessage}");
             }
 
             // Check for any toxic category above threshold
@@ -172,9 +173,9 @@ public sealed class L2ToxicityGuard : IOutputGuard, IDisposable
 
             return GuardCheckResult.Safe;
         }
-        catch (Exception)
+        finally
         {
-            return GuardCheckResult.Safe;
+            sw.Stop();
         }
     }
 

@@ -29,17 +29,12 @@ public class OptionsReachabilityRosterTests
     /// (<c>GuardTimeoutMs</c> is also copied by the options clone, which is not a read). Several of them are
     /// switches on what this library guards, so "set and nothing happens" here means a protection the caller
     /// believes in is absent. Each entry leaves this list by being wired or by being removed.
+    /// The core assembly's entries are gone (0.16.0): three were wired or implemented, the rest - switches for guards
+    /// that do not exist - were removed.
     /// </para>
     /// </summary>
     private static readonly Dictionary<string, string[]> KnownUnread = new()
     {
-        ["FluxGuard.Configuration.FluxGuardOptions"] = ["EnableL2Guards", "LogLevel"],
-        ["FluxGuard.Configuration.InputGuardOptions"] = ["EnableContentPolicy", "EnableRateLimit"],
-        ["FluxGuard.Configuration.OutputGuardOptions"] =
-        [
-            "EnableFormatCompliance", "EnablePIIMasking", "EnableToxicity", "PIIMaskChar",
-        ],
-        ["FluxGuard.L2.Guards.Input.L2GuardOptions"] = ["TimeoutMs"],
         ["FluxGuard.Remote.Configuration.LLMJudgeOptions"] = ["BlockThreshold"],
         ["FluxGuard.Remote.Configuration.RemoteGuardOptions"] = ["MaxRetries"],
         ["FluxGuard.SDK.AI.ChatClient.FluxGuardChatClientOptions"] = ["ValidateStreamingOutput"],

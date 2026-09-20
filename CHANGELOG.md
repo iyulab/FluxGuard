@@ -6,7 +6,37 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
 
 ## 0.16.0
 
+### Added
+
+- **`FluxGuardBuilder.AddL2Guards(sessionManager, options)` turns the L2 (local ML) guards on.** No preset registers
+  them, because they load ONNX models this library does not ship; until now the only way in was to construct
+  `L2PromptInjectionGuard` and `L2ToxicityGuard` by hand. The call adds both on top of whatever the builder resolves
+  to (the default preset included) and throws `InvalidOperationException`, naming the files, if a model or
+  vocabulary file is missing.
+
+### Removed
+
+- **Breaking: switches for guards that do not exist are gone.** Each was public, documented, several defaulted to
+  `true`, and nothing read them, so setting one changed nothing:
+  `FluxGuardOptions.EnableL2Guards` and `FluxGuardBuilder.DisableL2Guards()` (L2 guards are added with
+  `AddL2Guards`, so there is nothing to disable), `OutputGuardOptions.EnableToxicity` (same),
+  `InputGuardOptions.EnableRateLimit` (rate limiting belongs to the host: ASP.NET Core `RateLimiter` or the
+  gateway), `InputGuardOptions.EnableContentPolicy`, `OutputGuardOptions.EnableFormatCompliance`,
+  `OutputGuardOptions.EnablePIIMasking` and `PIIMaskChar` (the PII guards detect and block; nothing rewrites text),
+  `FluxGuardOptions.LogLevel` (log output follows the host's `ILoggerFactory` filters) and
+  `L2GuardOptions.TimeoutMs` (`FluxGuardOptions.GuardTimeoutMs` bounds every guard).
+  Migration: delete the assignment. If you set `EnableToxicity = false` or `EnableContentPolicy = false` to turn a
+  guard off, it was never on.
+- **Breaking: `ModelLoader.DownloadMissingModelsAsync`, `ModelDownloadProgress` and `DownloadStatus` are removed.**
+  The method downloaded nothing and returned `false`.
+
 ### Fixed
+
+- **The L2 guards answered "safe" whenever they could not run** - model not registered, inference failure, any
+  exception - whatever the fail mode. They now throw, so the pipeline's `FailMode` decides: skipped and reported to
+  `OnGuardErrorAsync` under `FailMode.Open`, blocking under `FailMode.Closed`.
+  **Behavior change:** a pipeline that holds an L2 guard without its model file used to pass everything silently; it
+  now logs a guard error per check, and blocks under `FailMode.Closed`.
 
 - **`InputGuardOptions.MaxInputLength` and `OutputGuardOptions.MaxOutputLength` are now enforced.** Both were
   declared, documented and shown in the README's configuration example, and nothing read them: text of any

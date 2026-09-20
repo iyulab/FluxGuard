@@ -1,5 +1,4 @@
 using FluxGuard.Core;
-using Microsoft.Extensions.Logging;
 
 namespace FluxGuard.Configuration;
 
@@ -50,16 +49,6 @@ public sealed class FluxGuardOptions
     /// </summary>
     private static FailMode DefaultFailModeFor(GuardPreset preset)
         => preset == GuardPreset.Strict ? FailMode.Closed : FailMode.Open;
-
-    /// <summary>
-    /// Log level (default: Warning - blocks/errors only)
-    /// </summary>
-    public LogLevel LogLevel { get; set; } = LogLevel.Warning;
-
-    /// <summary>
-    /// Whether L2 ML guards are enabled (default: true)
-    /// </summary>
-    public bool EnableL2Guards { get; set; } = true;
 
     /// <summary>
     /// Whether L3 escalation is enabled (default: false, requires WithRemoteGuard())
@@ -117,8 +106,6 @@ public sealed class FluxGuardOptions
         {
             target.FailMode = FailMode;
         }
-        target.LogLevel = LogLevel;
-        target.EnableL2Guards = EnableL2Guards;
         target.EnableL3Escalation = EnableL3Escalation;
         target.BlockThreshold = BlockThreshold;
         target.FlagThreshold = FlagThreshold;

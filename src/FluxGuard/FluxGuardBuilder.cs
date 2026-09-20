@@ -3,6 +3,9 @@ using FluxGuard.Configuration;
 using FluxGuard.Core;
 using FluxGuard.Hooks;
 using FluxGuard.L1.Patterns;
+using FluxGuard.L2.Guards.Input;
+using FluxGuard.L2.Guards.Output;
+using FluxGuard.L2.ML;
 using FluxGuard.Presets;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -18,6 +21,8 @@ public sealed class FluxGuardBuilder
     private readonly FluxGuardOptions _options = new();
     private readonly List<IInputGuard> _inputGuards = [];
     private readonly List<IOutputGuard> _outputGuards = [];
+    private readonly List<IInputGuard> _l2InputGuards = [];
+    private readonly List<IOutputGuard> _l2OutputGuards = [];
     private readonly List<IRemoteGuard> _remoteGuards = [];
     private IFluxGuardHooks _hooks = new FluxGuardHooks();
     private ILoggerFactory _loggerFactory = NullLoggerFactory.Instance;
@@ -175,12 +180,42 @@ public sealed class FluxGuardBuilder
     }
 
     /// <summary>
-    /// Disable L2 ML guards
+    /// Adds the L2 (local ML) guards: prompt-injection detection on input and toxicity detection on output.
+    /// No preset registers them - they load ONNX models, which this library does not ship - so this call is the
+    /// way to turn them on. They are added on top of whatever else the builder resolves to, the default preset included.
     /// </summary>
+    /// <param name="sessionManager">Owns the ONNX sessions. The caller keeps ownership and disposes it.</param>
+    /// <param name="options">Thresholds and <see cref="L2GuardOptions.ModelsBasePath"/>; defaults when null.</param>
     /// <returns>Builder instance</returns>
-    public FluxGuardBuilder DisableL2Guards()
+    /// <exception cref="InvalidOperationException">
+    /// A model or vocabulary file is missing. The guards were asked for explicitly, so a missing file is an error
+    /// here rather than a guard that answers "safe" to everything.
+    /// </exception>
+    public FluxGuardBuilder AddL2Guards(OnnxSessionManager sessionManager, L2GuardOptions? options = null)
     {
-        _options.EnableL2Guards = false;
+        ArgumentNullException.ThrowIfNull(sessionManager);
+        options ??= new L2GuardOptions();
+
+        var missing = new[]
+            {
+                ModelLoader.GetPromptInjectionModelInfo(options.ModelsBasePath),
+                ModelLoader.GetToxicityModelInfo(options.ModelsBasePath),
+            }
+            .SelectMany(model => new[] { model.ModelPath, model.TokenizerPath })
+            .Where(path => !File.Exists(path))
+            .ToList();
+        if (missing.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "AddL2Guards needs the L2 model files, and these are missing: " + string.Join(", ", missing) +
+                ". Place the models under " + ModelLoader.GetModelsDirectory(options.ModelsBasePath) +
+                " or set L2GuardOptions.ModelsBasePath.");
+        }
+
+        // Kept apart from _inputGuards/_outputGuards: those lists decide whether the default preset applies, and
+        // asking for L2 on top must not drop the L1 guards.
+        _l2InputGuards.Add(new L2PromptInjectionGuard(sessionManager, options));
+        _l2OutputGuards.Add(new L2ToxicityGuard(sessionManager, options));
         return this;
     }
 
@@ -208,6 +243,9 @@ public sealed class FluxGuardBuilder
             inputGuards.AddRange(PresetGuards.InputGuards(requested, registry, _options));
             outputGuards.AddRange(PresetGuards.OutputGuards(requested, registry, _options));
         }
+
+        inputGuards.AddRange(_l2InputGuards);
+        outputGuards.AddRange(_l2OutputGuards);
 
         return new FluxGuardCore(_options, inputGuards, outputGuards, _remoteGuards, _hooks, _loggerFactory);
     }

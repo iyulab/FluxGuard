@@ -20,9 +20,6 @@ public static class MinimalPreset
     {
         builder.RequestPreset(Core.GuardPreset.Minimal);
 
-        // Disable L2 guards
-        builder.DisableL2Guards();
-
         return builder;
     }
 
