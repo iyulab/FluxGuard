@@ -202,17 +202,20 @@ dotnet add package FluxGuard.Remote
 
 ```csharp
 // OpenAI — model must be set explicitly (no default since 0.11.0)
-var guard = new FluxGuardBuilder()
+IFluxGuard guard = FluxGuardBuilder.Create()
     .WithRemoteGuard("your-openai-api-key")
     .WithModel("gpt-4o-mini")
-    .WithTimeout(200)             // Use L2 result on timeout
+    .WithTimeout(200)             // the local verdict stands when the judge takes longer
+    .WithBlockThreshold(0.8)      // default: an "unsafe" verdict under this confidence is reported, not blocked
+    .Build()                      // back to the FluxGuardBuilder
     .Build();
 
-// Bring your own ITextCompletionService
-var guard = new FluxGuardBuilder()
-    .WithRemoteGuard("your-openai-api-key")
-    .WithModel("gpt-4o-mini")
-    .WithCompletionService(myCompletionService)
+// Bring your own IRemoteLlmService
+IFluxGuard guard = FluxGuardBuilder.Create()
+    .WithRemoteGuard("unused")
+    .WithModel("my-model")
+    .WithCompletionService(myLlmService)
+    .Build()
     .Build();
 
 // DI (ASP.NET Core) — register remote separately
@@ -225,10 +228,12 @@ services.AddFluxGuardRemote("your-openai-api-key", opt =>
 ```
 
 **Remote provides:**
-- LLM-as-Judge advanced analysis
-- Semantic caching
-- Hallucination detection (L3)
-- Multi-model ensemble
+- LLM-as-Judge analysis of what the local guards escalate
+- Caching of judge verdicts
+- Hallucination / groundedness detection (L3)
+
+A judge or detector that cannot answer is a guard error, so `FailMode` decides: passed under `Open`, blocked under
+`Closed`.
 
 ## MCP Guard (Optional)
 
@@ -336,55 +341,36 @@ exception arrives after the last one and is the caller's signal to retract what 
 Intercept at every decision point.
 
 ```csharp
-var guard = new FluxGuardBuilder()
-    .WithHooks(hooks =>
-    {
-        // Before/after checks
-        hooks.OnBeforeCheck = async ctx => { /* logging, modification */ };
-        hooks.OnAfterCheck = async (ctx, result) => { /* audit, notifications */ };
-
-        // Result-specific hooks
-        hooks.OnBlocked = async (ctx, result) =>
-        {
-            await alertService.NotifyAsync(result);
-        };
-
-        hooks.OnPassed = async (ctx, result) => { /* statistics */ };
-
-        // Escalation (when using Remote)
-        hooks.OnBeforeEscalation = async ctx => { /* pre-L3 processing */ };
-        hooks.OnEscalationTimeout = async ctx => { /* fallback logic */ };
-
-        // Custom decision - override default result
-        hooks.OnCustomDecision = async (ctx, result) =>
-        {
-            // Return null to use default result
-            // Return GuardDecision to override
-            if (ctx.User.IsAdmin)
-                return GuardDecision.Pass("Admin bypass");
-            return null;
-        };
-    })
-    .Build();
+var guard = FluxGuard.Create(builder => builder.WithHooks(hooks => hooks
+    // Return false to skip the check entirely
+    .OnBeforeCheck(ctx => ValueTask.FromResult(true))
+    .OnAfterCheck((ctx, result) => { /* audit */ return ValueTask.CompletedTask; })
+    .OnBlocked(async (ctx, result) => await alertService.NotifyAsync(result))
+    .OnPassed((ctx, result) => ValueTask.CompletedTask)
+    .OnFlagged((ctx, result) => ValueTask.CompletedTask)
+    // Override the verdict: null keeps it, AllowPass / ForceBlock replace it
+    .OnCustomDecision((ctx, result) => ValueTask.FromResult(
+        ctx.UserId == "admin" ? FailDecision.AllowPass("admin bypass") : null))
+    // A guard threw or timed out: Continue applies FailMode, AllowPass / ForceBlock decide here
+    .OnGuardError((ctx, guardName, ex) => ValueTask.FromResult(FailDecision.Continue))));
 ```
+
+For the escalation hooks (`OnBeforeEscalationAsync`, `OnEscalationTimeoutAsync`) implement `IFluxGuardHooks`, or
+derive from `FluxGuardHooks` and override what you need, and pass it to `WithHooks(...)`.
 
 ### Fail Mode
 
 ```csharp
 services.AddFluxGuard(opt =>
 {
-    // Behavior on guard execution error
-    opt.FailMode = FailMode.Open;   // Pass (availability priority)
-    opt.FailMode = FailMode.Closed; // Block (security priority)
-
-    // Or fine-grained control with hooks
-    opt.OnGuardError = async (ctx, ex) =>
-    {
-        logger.LogError(ex, "Guard error");
-        return FailDecision.Pass;  // or Block, Retry
-    };
+    // What a guard that throws or times out means
+    opt.FailMode = FailMode.Open;   // skip that guard (availability first)
+    opt.FailMode = FailMode.Closed; // block the request (security first)
 });
 ```
+
+This holds for every guard, the L2 and L3 guards included: a guard that cannot run reports an error and the fail
+mode decides. For per-error control use the `OnGuardError` hook above.
 
 **When you don't set `FailMode`, it is derived from the preset** (since 0.12.0):
 
@@ -413,62 +399,63 @@ FluxGuard.Create(b => b.WithPreset(GuardPreset.Strict).WithFailMode(FailMode.Ope
 
 ## Internationalization
 
-Built-in support for PII patterns and toxicity detection in major languages.
+The PII guards load pattern sets by language. `SupportedLanguages` selects which sets are loaded; the generic
+patterns (email, credit card, API keys, ...) are always on.
 
-**Supported Languages:**
-- English, Korean, Japanese, Chinese (Simplified/Traditional)
-- Spanish, Portuguese, French, German
-- Arabic, Hindi, Russian
+| Code | Pattern set |
+|------|-------------|
+| `en` | US (SSN, phone, ...) |
+| `ko` | Korean (resident registration number, phone, credentials, ...) |
+| `ja` | Japanese (My Number, phone, ...) |
 
 ```csharp
-var guard = new FluxGuardBuilder()
-    .WithLanguages(Languages.Korean | Languages.English)  // Default: All
-    .Build();
+var guard = FluxGuard.Create(builder => builder
+    .ConfigureInputGuards(o => o.SupportedLanguages = ["ko", "en"]));   // default: every code
 ```
 
-## Custom Rules
+The other guards are not filtered by this list.
+
+## Custom Guards
+
+A custom rule is a guard: implement `IInputGuard` (or `IOutputGuard`) and add it. Adding a guard does not replace the
+preset when you also name one.
 
 ```csharp
-// Add input rule
-guard.AddInputRule(new PatternRule
+public sealed class CompetitorGuard : IInputGuard
 {
-    Name = "CompetitorBlock",
-    Pattern = @"\b(competitor1|competitor2)\b",
-    Action = GuardAction.Flag,
-    Severity = Severity.Medium
-});
+    public string Name => "Competitor";
+    public string Layer => "L1";
+    public bool IsEnabled => true;
+    public int Order => 200;
 
-// Add output rule
-guard.AddOutputRule(new ContentRule
-{
-    Name = "InternalCodeFilter",
-    Keywords = ["INTERNAL:", "DEBUG:", "TODO:"],
-    Action = GuardAction.Remove
-});
+    public ValueTask<GuardCheckResult> CheckAsync(GuardContext context) =>
+        ValueTask.FromResult(context.NormalizedInput.Contains("competitor1", StringComparison.OrdinalIgnoreCase)
+            ? new GuardCheckResult { GuardName = Name, Passed = false, Score = 0.9, Severity = Severity.High, Details = "competitor mention" }
+            : GuardCheckResult.Safe);
+}
+
+var guard = FluxGuard.Create(builder => builder
+    .WithPreset(GuardPreset.Standard)
+    .AddInputGuard(new CompetitorGuard()));
 ```
 
-## Logging & Metrics
+## Logging & Statistics
+
+Logging goes through the `ILoggerFactory` you pass (`WithLogging(loggerFactory)`, or the container's with
+`AddFluxGuard`). Blocks and guard errors are warnings or errors; the rest is debug.
+
+Statistics are recorded when you hand the pipeline a collector. Without one, nothing is recorded.
 
 ```csharp
-var guard = new FluxGuardBuilder()
-    .WithLogging(opt =>
-    {
-        opt.LogLevel = GuardLogLevel.Warning;  // Default: blocks/errors only
-        opt.LogDestination = LogDestination.Console;
-    })
-    .WithMetrics(opt =>
-    {
-        opt.EnablePrometheus = true;
-        opt.MetricsPrefix = "fluxguard";
-    })
-    .Build();
+var stats = new InMemoryStatsCollector();          // or FluxGuardMetrics: System.Diagnostics.Metrics, meter "FluxGuard"
+var guard = FluxGuard.Create(builder => builder.WithStats(stats));
 
-// Get statistics
-var stats = guard.GetStats();
-Console.WriteLine($"Total: {stats.TotalChecks}");
-Console.WriteLine($"Blocked: {stats.BlockedCount} ({stats.BlockRate:P1})");
-Console.WriteLine($"Avg Latency: {stats.AvgLatencyMs:F1}ms");
+var snapshot = stats.GetStats();
+Console.WriteLine($"Total: {snapshot.TotalChecks}, blocked: {snapshot.BlockedCount} ({snapshot.BlockRate:P1})");
+Console.WriteLine($"Avg latency: {snapshot.AverageLatencyMs:F1} ms, guard errors: {snapshot.ErrorCount}");
 ```
+
+With `AddFluxGuard(...)`, register an `IGuardStatsCollector` in the container and the pipeline picks it up.
 
 ## Configuration File
 

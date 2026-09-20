@@ -13,6 +13,11 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   `L2PromptInjectionGuard` and `L2ToxicityGuard` by hand. The call adds both on top of whatever the builder resolves
   to (the default preset included) and throws `InvalidOperationException`, naming the files, if a model or
   vocabulary file is missing.
+- **`FluxGuardBuilder.WithStats(collector)` feeds a statistics collector from the pipeline.** `InMemoryStatsCollector`
+  and `FluxGuardMetrics` were public and nothing called them, so `GetStats()` stayed empty whatever was checked.
+  The pipeline now records every check, every guard execution with its latency, and every guard error into the
+  collector it is given. With `AddFluxGuard(...)`, a registered `IGuardStatsCollector` is picked up. Without a
+  collector nothing is recorded.
 - `StreamingGuardOptions.FailMode` (default `Open`): what a streaming guard that throws means. `Closed` terminates
   the stream, with the guard's name in the verdict; `Open` skips the guard, as before.
 
@@ -98,6 +103,10 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   timeout. The same wait also observes the caller's cancellation token, so cancelling a check no longer waits for
   a guard that ignores the token.
   **Behavior change:** a custom guard slower than 5 seconds is now skipped (or blocks, under `FailMode.Closed`).
+- The README's Hooks, Fail Mode, Internationalization, Custom Rules, Logging & Metrics and Remote Guard sections
+  described an API that does not exist (`WithLanguages`, `WithMetrics`, `GuardLogLevel`, `AddInputRule`,
+  `PatternRule`, `opt.OnGuardError`, `guard.GetStats()`, property-style hooks, a "multi-model ensemble"). They now
+  show the API as it is; every member named in a C# block is checked against the source.
 - The README's builder example called members that do not exist (`WithInputGuards`, `WithOutputGuards`,
   `PIIMaskingPattern`, `RateLimit.RequestsPerMinute`). It now uses the API as it is.
 - The README's Quick Start and Presets sections constructed `new FluxGuard(...)` (a static class), read

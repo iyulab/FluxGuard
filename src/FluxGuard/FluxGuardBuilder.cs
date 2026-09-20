@@ -6,6 +6,7 @@ using FluxGuard.L1.Patterns;
 using FluxGuard.L2.Guards.Input;
 using FluxGuard.L2.Guards.Output;
 using FluxGuard.L2.ML;
+using FluxGuard.Monitoring;
 using FluxGuard.Presets;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -28,6 +29,7 @@ public sealed class FluxGuardBuilder
     private ILoggerFactory _loggerFactory = NullLoggerFactory.Instance;
     private GuardPreset? _requestedPreset;
     private IPatternRegistry? _patternRegistry;
+    private IGuardStatsCollector? _stats;
 
     /// <summary>
     /// Create new builder instance
@@ -180,6 +182,19 @@ public sealed class FluxGuardBuilder
     }
 
     /// <summary>
+    /// Feeds a statistics collector (<see cref="InMemoryStatsCollector"/>, or <c>FluxGuardMetrics</c> for
+    /// System.Diagnostics.Metrics instruments) from the pipeline: every check, every guard execution with its latency,
+    /// and every guard error. Without it nothing is recorded.
+    /// </summary>
+    /// <param name="stats">Statistics collector</param>
+    /// <returns>Builder instance</returns>
+    public FluxGuardBuilder WithStats(IGuardStatsCollector stats)
+    {
+        _stats = stats ?? throw new ArgumentNullException(nameof(stats));
+        return this;
+    }
+
+    /// <summary>
     /// Adds the L2 (local ML) guards: prompt-injection detection on input and toxicity detection on output.
     /// No preset registers them - they load ONNX models, which this library does not ship - so this call is the
     /// way to turn them on. They are added on top of whatever else the builder resolves to, the default preset included.
@@ -247,7 +262,7 @@ public sealed class FluxGuardBuilder
         inputGuards.AddRange(_l2InputGuards);
         outputGuards.AddRange(_l2OutputGuards);
 
-        return new FluxGuardCore(_options, inputGuards, outputGuards, _remoteGuards, _hooks, _loggerFactory);
+        return new FluxGuardCore(_options, inputGuards, outputGuards, _remoteGuards, _hooks, _loggerFactory, _stats);
     }
 
     /// <summary>Asks for a preset's guards; they are created in <see cref="Build"/> from the final options.</summary>

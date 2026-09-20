@@ -4,6 +4,7 @@ using FluxGuard.Configuration;
 using FluxGuard.Core;
 using FluxGuard.Hooks;
 using FluxGuard.L1.Normalization;
+using FluxGuard.Monitoring;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -21,6 +22,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
     private readonly IFluxGuardHooks _hooks;
     private readonly ILogger<FluxGuardCore> _logger;
     private readonly UnicodeNormalizer _normalizer;
+    private readonly IGuardStatsCollector? _stats;
 
     public FluxGuardCore(
         FluxGuardOptions options,
@@ -28,9 +30,11 @@ internal sealed partial class FluxGuardCore : IFluxGuard
         IReadOnlyList<IOutputGuard> outputGuards,
         IReadOnlyList<IRemoteGuard> remoteGuards,
         IFluxGuardHooks hooks,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory,
+        IGuardStatsCollector? stats = null)
     {
         _options = options;
+        _stats = stats;
         _inputGuards = [.. inputGuards.OrderBy(g => g.Order)];
         _outputGuards = [.. outputGuards.OrderBy(g => g.Order)];
         _remoteGuards = [.. remoteGuards.Where(g => g.IsEnabled).OrderBy(g => g.Order)];
@@ -61,6 +65,13 @@ internal sealed partial class FluxGuardCore : IFluxGuard
 
     /// <inheritdoc />
     public async Task<GuardResult> CheckInputAsync(GuardContext context)
+    {
+        var result = await CheckInputCoreAsync(context);
+        _stats?.RecordCheck(result, isInput: true);
+        return result;
+    }
+
+    private async Task<GuardResult> CheckInputCoreAsync(GuardContext context)
     {
         var stopwatch = Stopwatch.StartNew();
 
@@ -98,7 +109,11 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 {
                     context.CancellationToken.ThrowIfCancellationRequested();
 
+                    var guardStarted = Stopwatch.GetTimestamp();
                     var result = await WithGuardTimeoutAsync(guard.Name, guard.CheckAsync(context), context.CancellationToken);
+                    _stats?.RecordGuardExecution(
+                        guard.Name, guard.Layer, Stopwatch.GetElapsedTime(guardStarted).TotalMilliseconds,
+                        triggered: !result.Passed || result.Score > 0);
 
                     if (!result.Passed || result.Score > 0)
                     {
@@ -130,6 +145,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 }
                 catch (Exception ex)
                 {
+                    _stats?.RecordGuardError(guard.Name, guard.Layer);
                     var decision = await _hooks.OnGuardErrorAsync(context, guard.Name, ex);
 
                     if (_options.FailMode == FailMode.Closed &&
@@ -224,6 +240,13 @@ internal sealed partial class FluxGuardCore : IFluxGuard
     /// <inheritdoc />
     public async Task<GuardResult> CheckOutputAsync(GuardContext context, string output)
     {
+        var result = await CheckOutputCoreAsync(context, output);
+        _stats?.RecordCheck(result, isInput: false);
+        return result;
+    }
+
+    private async Task<GuardResult> CheckOutputCoreAsync(GuardContext context, string output)
+    {
         var stopwatch = Stopwatch.StartNew();
 
         try
@@ -253,7 +276,11 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 {
                     context.CancellationToken.ThrowIfCancellationRequested();
 
+                    var guardStarted = Stopwatch.GetTimestamp();
                     var result = await WithGuardTimeoutAsync(guard.Name, guard.CheckAsync(context, output), context.CancellationToken);
+                    _stats?.RecordGuardExecution(
+                        guard.Name, guard.Layer, Stopwatch.GetElapsedTime(guardStarted).TotalMilliseconds,
+                        triggered: !result.Passed || result.Score > 0);
 
                     if (!result.Passed || result.Score > 0)
                     {
@@ -285,6 +312,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 }
                 catch (Exception ex)
                 {
+                    _stats?.RecordGuardError(guard.Name, guard.Layer);
                     var decision = await _hooks.OnGuardErrorAsync(context, guard.Name, ex);
 
                     if (_options.FailMode == FailMode.Closed &&

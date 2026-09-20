@@ -5,6 +5,7 @@ using FluxGuard.Hooks;
 using FluxGuard.L1.Guards.Input;
 using FluxGuard.L1.Guards.Output;
 using FluxGuard.L1.Patterns;
+using FluxGuard.Monitoring;
 using FluxGuard.Presets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -69,6 +70,12 @@ public static class ServiceCollectionExtensions
             foreach (var remoteGuard in sp.GetServices<IRemoteGuard>())
             {
                 builder.AddRemoteGuard(remoteGuard);
+            }
+
+            // A registered statistics collector is fed by the pipeline; none registered, nothing is recorded.
+            if (sp.GetService<IGuardStatsCollector>() is { } stats)
+            {
+                builder.WithStats(stats);
             }
 
             return builder.Build();
