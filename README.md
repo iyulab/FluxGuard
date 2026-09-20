@@ -137,19 +137,17 @@ return outputCheck.SanitizedContent ?? response;
 ### Builder Pattern
 
 ```csharp
-var guard = new FluxGuardBuilder()
-    .WithInputGuards(opt =>
+var guard = FluxGuard.Create(builder => builder
+    .ApplyStandardPreset()
+    .ConfigureInputGuards(opt =>
     {
-        // All guards are ON by default - turn OFF if needed
-        opt.EnableRateLimit = false;
-        opt.RateLimit.RequestsPerMinute = 120;
+        // Longer inputs are blocked before any guard runs. 0 means no limit.
+        opt.MaxInputLength = 8192;
     })
-    .WithOutputGuards(opt =>
+    .ConfigureOutputGuards(opt =>
     {
-        opt.MaxOutputLength = 8192;
-        opt.PIIMaskingPattern = "[REDACTED]";
-    })
-    .Build();
+        opt.MaxOutputLength = 4096;
+    }));
 ```
 
 ### Presets

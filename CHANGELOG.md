@@ -4,6 +4,21 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.16.0
+
+### Fixed
+
+- **`InputGuardOptions.MaxInputLength` and `OutputGuardOptions.MaxOutputLength` are now enforced.** Both were
+  declared, documented and shown in the README's configuration example, and nothing read them: text of any
+  length went through. A check whose input (or output) is longer than the limit is now blocked before
+  normalization and before any guard runs, with `GuardName` `InputLength` / `OutputLength` in
+  `TriggeredGuards` and the two lengths in `BlockReason`. The block runs the same `OnBlocked` / `OnAfterCheck`
+  hooks as any other.
+  **Behavior change:** the defaults are 128,000 characters each, so a consumer that never set them will start
+  blocking text longer than that. Set the option to `0` for no limit.
+- The README's builder example called members that do not exist (`WithInputGuards`, `WithOutputGuards`,
+  `PIIMaskingPattern`, `RateLimit.RequestsPerMinute`). It now uses the API as it is.
+
 ## 0.15.1
 
 ### Changed

@@ -73,6 +73,15 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 return GuardResult.Pass(context.RequestId, stopwatch.Elapsed.TotalMilliseconds);
             }
 
+            // Length limit first: it is cheaper than anything that follows, and normalizing or pattern-matching
+            // an oversized input is itself the cost the limit exists to avoid.
+            var inputLimit = _options.InputGuards.MaxInputLength;
+            if (inputLimit > 0 && context.OriginalInput.Length > inputLimit)
+            {
+                return await BlockForLengthAsync(
+                    context, "InputLength", context.OriginalInput.Length, inputLimit, stopwatch);
+            }
+
             // Normalize input
             context.NormalizedInput = _normalizer.Normalize(context.OriginalInput);
 
@@ -223,6 +232,12 @@ internal sealed partial class FluxGuardCore : IFluxGuard
             if (!await _hooks.OnBeforeCheckAsync(context))
             {
                 return GuardResult.Pass(context.RequestId, stopwatch.Elapsed.TotalMilliseconds);
+            }
+
+            var outputLimit = _options.OutputGuards.MaxOutputLength;
+            if (outputLimit > 0 && output.Length > outputLimit)
+            {
+                return await BlockForLengthAsync(context, "OutputLength", output.Length, outputLimit, stopwatch);
             }
 
             // Execute guards
@@ -580,6 +595,34 @@ internal sealed partial class FluxGuardCore : IFluxGuard
         }
 
         return GuardResult.Pass(requestId, latencyMs);
+    }
+
+    /// <summary>
+    /// Blocks a check whose text is longer than the configured limit, and runs the same result hooks a
+    /// guard-triggered block runs. A limit of zero or less means no limit.
+    /// </summary>
+    private async Task<GuardResult> BlockForLengthAsync(
+        GuardContext context, string guardName, int length, int limit, Stopwatch stopwatch)
+    {
+        var details = $"Length {length} exceeds the configured maximum of {limit}";
+        var result = GuardResult.Block(
+            context.RequestId,
+            $"{guardName}: {details}",
+            1.0,
+            Severity.High,
+            [new TriggeredGuard
+            {
+                GuardName = guardName,
+                Layer = "L1",
+                Confidence = 1.0,
+                Severity = Severity.High,
+                Details = details
+            }],
+            stopwatch.Elapsed.TotalMilliseconds);
+
+        await CallResultHooksAsync(context, result);
+        await _hooks.OnAfterCheckAsync(context, result);
+        return result;
     }
 
     private async ValueTask CallResultHooksAsync(GuardContext context, GuardResult result)

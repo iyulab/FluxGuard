@@ -24,7 +24,7 @@ public class OptionsReachabilityRosterTests
     /// Options accepted as unread today. Shrink this list; never grow it silently.
     /// <para>
     /// Opening baseline (2026-09-20): recorded as found, not as judged. A sample was checked by hand
-    /// (<c>MaxInputLength</c>, <c>EnablePIIMasking</c>, <c>EnableToxicity</c>, <c>EnableContentPolicy</c>,
+    /// (<c>EnablePIIMasking</c>, <c>EnableToxicity</c>, <c>EnableContentPolicy</c>,
     /// <c>EnableRateLimit</c>, <c>GuardTimeoutMs</c>): each has its declaration as its only reference in src/
     /// (<c>GuardTimeoutMs</c> is also copied by the options clone, which is not a read). Several of them are
     /// switches on what this library guards, so "set and nothing happens" here means a protection the caller
@@ -34,10 +34,10 @@ public class OptionsReachabilityRosterTests
     private static readonly Dictionary<string, string[]> KnownUnread = new()
     {
         ["FluxGuard.Configuration.FluxGuardOptions"] = ["EnableL2Guards", "GuardTimeoutMs", "LogLevel"],
-        ["FluxGuard.Configuration.InputGuardOptions"] = ["EnableContentPolicy", "EnableRateLimit", "MaxInputLength"],
+        ["FluxGuard.Configuration.InputGuardOptions"] = ["EnableContentPolicy", "EnableRateLimit"],
         ["FluxGuard.Configuration.OutputGuardOptions"] =
         [
-            "EnableFormatCompliance", "EnablePIIMasking", "EnableToxicity", "MaxOutputLength", "PIIMaskChar",
+            "EnableFormatCompliance", "EnablePIIMasking", "EnableToxicity", "PIIMaskChar",
         ],
         ["FluxGuard.L2.Guards.Input.L2GuardOptions"] = ["TimeoutMs"],
         ["FluxGuard.Remote.Configuration.LLMJudgeOptions"] = ["BlockThreshold"],
