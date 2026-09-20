@@ -33,7 +33,8 @@ public sealed class FluxGuardMiddlewareOptions
     public string InputFieldName { get; set; } = "input";
 
     /// <summary>
-    /// Maximum request body size to check in bytes (default: 1MB)
+    /// Largest request body the middleware accepts on a protected path, in bytes (default: 1 MB; 0 = no limit).
+    /// A larger body is answered with 413 and is neither checked nor passed on.
     /// </summary>
     public int MaxBodySize { get; set; } = 1024 * 1024;
 }

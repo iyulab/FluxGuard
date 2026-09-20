@@ -102,10 +102,33 @@ public sealed partial class FluxGuardChatClient : DelegatingChatClient
             }
         }
 
-        // Stream response
+        // Stream response. With ValidateStreamingOutput the text is collected as it goes by and checked once the
+        // stream ends: the updates have been forwarded by then, so a block arrives as an exception after the last
+        // one - the caller's signal to retract what it showed.
+        var validateOutput = _options.ValidateOutput && _options.ValidateStreamingOutput;
+        var collected = validateOutput ? new System.Text.StringBuilder() : null;
+
         await foreach (var update in base.GetStreamingResponseAsync(messages, options, cancellationToken))
         {
+            collected?.Append(update.Text);
             yield return update;
+        }
+
+        if (collected is { Length: > 0 })
+        {
+            var outputResult = await _guard.CheckOutputAsync(
+                inputText ?? string.Empty,
+                collected.ToString(),
+                cancellationToken);
+
+            if (outputResult.IsBlocked)
+            {
+                LogStreamingResponseBlocked(_logger, outputResult.BlockReason);
+
+                throw new FluxGuardChatBlockedException(
+                    "Response blocked by security guard",
+                    outputResult);
+            }
         }
     }
 
@@ -129,6 +152,9 @@ public sealed partial class FluxGuardChatClient : DelegatingChatClient
 
     [LoggerMessage(LogLevel.Warning, "Streaming request blocked: {Reason}")]
     private static partial void LogStreamingRequestBlocked(ILogger logger, string? reason);
+
+    [LoggerMessage(LogLevel.Warning, "Streaming response blocked after the stream ended: {Reason}")]
+    private static partial void LogStreamingResponseBlocked(ILogger logger, string? reason);
 }
 
 /// <summary>
@@ -147,7 +173,9 @@ public sealed class FluxGuardChatClientOptions
     public bool ValidateOutput { get; set; } = true;
 
     /// <summary>
-    /// Whether to validate streaming outputs (default: false for performance)
+    /// Whether a streamed response is checked (default: false). The check runs once, on the whole text, when the
+    /// stream ends - the updates have already been forwarded, so a blocked response surfaces as a
+    /// <see cref="FluxGuardChatBlockedException"/> thrown after the last update. Requires <see cref="ValidateOutput"/>.
     /// </summary>
     public bool ValidateStreamingOutput { get; set; }
 }

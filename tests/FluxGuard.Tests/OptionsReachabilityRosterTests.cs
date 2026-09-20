@@ -29,15 +29,12 @@ public class OptionsReachabilityRosterTests
     /// (<c>GuardTimeoutMs</c> is also copied by the options clone, which is not a read). Several of them are
     /// switches on what this library guards, so "set and nothing happens" here means a protection the caller
     /// believes in is absent. Each entry leaves this list by being wired or by being removed.
-    /// The core assembly's entries are gone (0.16.0): three were wired or implemented, the rest - switches for guards
-    /// that do not exist - were removed.
+    /// Empty since 0.16.0: of the 17, seven were wired or implemented (length limits, guard timeout, the judge's block
+    /// threshold, streaming chunk size, streamed-response validation, request body size) and ten - switches for
+    /// guards that do not exist, a log level, a retry count nothing retried - were removed.
     /// </para>
     /// </summary>
-    private static readonly Dictionary<string, string[]> KnownUnread = new()
-    {
-        ["FluxGuard.SDK.AI.ChatClient.FluxGuardChatClientOptions"] = ["ValidateStreamingOutput"],
-        ["FluxGuard.SDK.AspNetCore.Middleware.FluxGuardMiddlewareOptions"] = ["MaxBodySize"],
-    };
+    private static readonly Dictionary<string, string[]> KnownUnread = new();
 
     [Fact]
     public void EveryPublicOption_IsRead() =>

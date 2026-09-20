@@ -301,19 +301,35 @@ dotnet add package FluxGuard.SDK
 ```csharp
 // Program.cs
 builder.Services.AddFluxGuard();
-builder.Services.AddFluxGuardMiddleware();
+builder.Services.AddFluxGuardMiddleware(o =>
+{
+    o.ProtectedPaths.Add("/api/chat");   // none listed = every path
+    o.InputFieldName = "input";          // JSON field holding the text to check
+    o.MaxBodySize = 1024 * 1024;         // default; a larger body gets 413 and is neither checked nor passed on
+});
 
 app.UseFluxGuard();
 ```
 
+The middleware checks the body of POST / PUT / PATCH requests. A blocked request is answered with
+`BlockedStatusCode`; a flagged one is passed on with `X-FluxGuard-Flagged` / `X-FluxGuard-Score` headers.
+
 ### Microsoft.Extensions.AI
 
 ```csharp
-var chatClient = new ChatClientBuilder()
-    .UseFluxGuard()
-    .Use(new OpenAIChatClient(...))
-    .Build();
+var chatClient = new ChatClientBuilder(innerClient)
+    .UseFluxGuard(new FluxGuardChatClientOptions
+    {
+        ValidateInput = true,             // default
+        ValidateOutput = true,            // default
+        ValidateStreamingOutput = true,   // default false: streamed responses are not checked unless you turn this on
+    })
+    .Build(serviceProvider);              // resolves IFluxGuard from DI
 ```
+
+A blocked request or response throws `FluxGuardChatBlockedException` (its `Result` is the `GuardResult`). A streamed
+response is checked once, on the whole text, when the stream ends: the updates have already been forwarded, so the
+exception arrives after the last one and is the caller's signal to retract what it showed.
 
 ## Hooks & Customization
 

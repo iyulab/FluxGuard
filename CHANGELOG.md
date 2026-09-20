@@ -49,6 +49,16 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   kept passing for the cache lifetime; a failed call is no longer cached.
   **Behavior change:** under `FailMode.Closed`, an unreachable judge or detector now blocks. Under `FailMode.Open`
   the outcome is the same as before.
+- **`FluxGuardChatClientOptions.ValidateStreamingOutput` now checks a streamed response.** Nothing read it, so a
+  streamed response was never checked, while the same response fetched without streaming was. With the option on,
+  the text is collected as the updates go by and checked once when the stream ends; a blocked response surfaces as
+  a `FluxGuardChatBlockedException` thrown after the last update, the caller's signal to retract what it showed.
+  The default stays off. `ValidateOutput = false` turns it off too.
+- **`FluxGuardMiddlewareOptions.MaxBodySize` is now enforced.** Nothing read it: the middleware buffered and read a
+  body of any size. A body over the limit on a protected path is answered with `413 Payload Too Large` and is
+  neither checked nor passed on - skipping the check instead would let padding carry anything past the guard. The
+  limit holds for chunked requests too (it is applied while reading). `0` means no limit.
+  **Behavior change:** the default is 1 MB, so a protected endpoint that accepted larger bodies now refuses them.
 - **`StreamingGuardOrchestrator` sent the end of the stream twice.** Its final result carried the unprocessed tail
   of the buffer as `OutputChunk`, after every chunk had already been forwarded, so a caller that forwards
   `OutputChunk` repeated that tail (the whole output, with sentence-level validation off). The final result now

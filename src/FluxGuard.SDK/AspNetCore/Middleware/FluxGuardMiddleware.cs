@@ -56,9 +56,23 @@ public sealed partial class FluxGuardMiddleware
             return;
         }
 
+        // A body over the limit is refused, not passed on unchecked: skipping the check would let padding carry
+        // anything past the guard.
+        var maxBodySize = _options.MaxBodySize;
+        if (maxBodySize > 0 && context.Request.ContentLength > maxBodySize)
+        {
+            await WritePayloadTooLargeAsync(context, maxBodySize);
+            return;
+        }
+
         // Enable buffering and read body
         context.Request.EnableBuffering();
-        var body = await ReadBodyAsync(context.Request);
+        var body = await ReadBodyAsync(context.Request, maxBodySize, context.RequestAborted);
+        if (body is null)
+        {
+            await WritePayloadTooLargeAsync(context, maxBodySize);
+            return;
+        }
 
         if (string.IsNullOrEmpty(body))
         {
@@ -124,12 +138,30 @@ public sealed partial class FluxGuardMiddleware
         return method is "POST" or "PUT" or "PATCH";
     }
 
-    private static async Task<string?> ReadBodyAsync(HttpRequest request)
+    /// <summary>Reads the body as UTF-8 text; null when it is longer than <paramref name="maxBodySize"/> bytes (0 = no limit).</summary>
+    private static async Task<string?> ReadBodyAsync(HttpRequest request, int maxBodySize, CancellationToken cancellationToken)
     {
-        using var reader = new StreamReader(
-            request.Body,
-            leaveOpen: true);
-        return await reader.ReadToEndAsync();
+        using var bytes = new MemoryStream();
+        var chunk = new byte[8192];
+        int read;
+        while ((read = await request.Body.ReadAsync(chunk, cancellationToken)) > 0)
+        {
+            if (maxBodySize > 0 && bytes.Length + read > maxBodySize)
+            {
+                return null;
+            }
+
+            bytes.Write(chunk, 0, read);
+        }
+
+        return System.Text.Encoding.UTF8.GetString(bytes.GetBuffer(), 0, (int)bytes.Length);
+    }
+
+    private async Task WritePayloadTooLargeAsync(HttpContext context, int maxBodySize)
+    {
+        LogBodyTooLarge(_logger, context.Request.Path, maxBodySize);
+        context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+        await context.Response.WriteAsync("Request body exceeds the size this endpoint checks.");
     }
 
     private string? ExtractTextContent(string body)
@@ -210,4 +242,7 @@ public sealed partial class FluxGuardMiddleware
 
     [LoggerMessage(LogLevel.Information, "Request flagged by FluxGuard: Score: {Score}, Path: {Path}")]
     private static partial void LogRequestFlagged(ILogger logger, double score, PathString path);
+
+    [LoggerMessage(LogLevel.Warning, "Request body over the {MaxBodySize}-byte limit refused, Path: {Path}")]
+    private static partial void LogBodyTooLarge(ILogger logger, PathString path, int maxBodySize);
 }
