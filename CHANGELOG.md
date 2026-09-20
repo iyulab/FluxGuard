@@ -26,6 +26,13 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   default options object, so `ConfigureInputGuards(o => o.EnablePromptInjection = false)` had no effect on the
   guards they added. The preset's guards are now created when the pipeline is built, from the builder's final
   options, whichever order the calls came in. The builder and `AddFluxGuard(...)` share that one path.
+- **`FluxGuardOptions.GuardTimeoutMs` is now enforced.** It was declared with a default of 5000 and nothing read
+  it, so a guard that never answered held the request for as long as it liked. The pipeline now waits that long
+  for each guard. A guard that outlives it is handled as a guard error: skipped under `FailMode.Open`, blocking
+  under `FailMode.Closed`, and reported to `OnGuardErrorAsync` as a `TimeoutException` either way. `0` means no
+  timeout. The same wait also observes the caller's cancellation token, so cancelling a check no longer waits for
+  a guard that ignores the token.
+  **Behavior change:** a custom guard slower than 5 seconds is now skipped (or blocks, under `FailMode.Closed`).
 - The README's builder example called members that do not exist (`WithInputGuards`, `WithOutputGuards`,
   `PIIMaskingPattern`, `RateLimit.RequestsPerMinute`). It now uses the API as it is.
 - The README's Quick Start and Presets sections constructed `new FluxGuard(...)` (a static class), read

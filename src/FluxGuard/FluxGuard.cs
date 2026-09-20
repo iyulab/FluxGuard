@@ -98,7 +98,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 {
                     context.CancellationToken.ThrowIfCancellationRequested();
 
-                    var result = await guard.CheckAsync(context);
+                    var result = await WithGuardTimeoutAsync(guard.Name, guard.CheckAsync(context), context.CancellationToken);
 
                     if (!result.Passed || result.Score > 0)
                     {
@@ -253,7 +253,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 {
                     context.CancellationToken.ThrowIfCancellationRequested();
 
-                    var result = await guard.CheckAsync(context, output);
+                    var result = await WithGuardTimeoutAsync(guard.Name, guard.CheckAsync(context, output), context.CancellationToken);
 
                     if (!result.Passed || result.Score > 0)
                     {
@@ -601,6 +601,36 @@ internal sealed partial class FluxGuardCore : IFluxGuard
     /// Blocks a check whose text is longer than the configured limit, and runs the same result hooks a
     /// guard-triggered block runs. A limit of zero or less means no limit.
     /// </summary>
+    /// <summary>
+    /// Bounds one guard by <see cref="FluxGuardOptions.GuardTimeoutMs"/>. A guard that outlives it is a guard error
+    /// (a <see cref="TimeoutException"/>), so it takes the same <see cref="FailMode"/> path as a guard that throws.
+    /// The pipeline stops waiting; it cannot stop the guard, whose work runs on unobserved. A guard that does all
+    /// its work before returning its task (the L1 pattern guards) is bounded by the regex match timeout instead.
+    /// </summary>
+    private async ValueTask<GuardCheckResult> WithGuardTimeoutAsync(
+        string guardName,
+        ValueTask<GuardCheckResult> pending,
+        CancellationToken cancellationToken)
+    {
+        if (pending.IsCompleted)
+        {
+            return await pending;
+        }
+
+        var timeoutMs = _options.GuardTimeoutMs;
+        var task = pending.AsTask();
+        try
+        {
+            return timeoutMs > 0
+                ? await task.WaitAsync(TimeSpan.FromMilliseconds(timeoutMs), cancellationToken)
+                : await task.WaitAsync(cancellationToken);
+        }
+        catch (TimeoutException)
+        {
+            throw new TimeoutException($"Guard '{guardName}' did not answer within {timeoutMs} ms.");
+        }
+    }
+
     private async Task<GuardResult> BlockForLengthAsync(
         GuardContext context, string guardName, int length, int limit, Stopwatch stopwatch)
     {

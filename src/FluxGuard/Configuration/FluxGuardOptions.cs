@@ -82,7 +82,10 @@ public sealed class FluxGuardOptions
     public double EscalationThreshold { get; set; } = 0.5;
 
     /// <summary>
-    /// Guard timeout in milliseconds (default: 5000)
+    /// How long the pipeline waits for one guard, in milliseconds (default: 5000; 0 = no timeout).
+    /// A guard that outlives it is handled as a guard error: skipped under <see cref="FailMode.Open"/>,
+    /// blocking under <see cref="FailMode.Closed"/>, and reported to <c>OnGuardErrorAsync</c> as a
+    /// <see cref="TimeoutException"/> either way.
     /// </summary>
     public int GuardTimeoutMs { get; set; } = 5000;
 

@@ -33,7 +33,7 @@ public class OptionsReachabilityRosterTests
     /// </summary>
     private static readonly Dictionary<string, string[]> KnownUnread = new()
     {
-        ["FluxGuard.Configuration.FluxGuardOptions"] = ["EnableL2Guards", "GuardTimeoutMs", "LogLevel"],
+        ["FluxGuard.Configuration.FluxGuardOptions"] = ["EnableL2Guards", "LogLevel"],
         ["FluxGuard.Configuration.InputGuardOptions"] = ["EnableContentPolicy", "EnableRateLimit"],
         ["FluxGuard.Configuration.OutputGuardOptions"] =
         [
