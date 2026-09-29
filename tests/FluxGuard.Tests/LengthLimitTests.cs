@@ -18,7 +18,7 @@ public class LengthLimitTests
     [Fact]
     public async Task CheckInputAsync_BlocksAnInputOverTheConfiguredMaximum()
     {
-        var guard = FluxGuard.Create(builder => builder.ConfigureInputGuards(o => o.MaxInputLength = 8192));
+        var guard = FluxGuardBuilder.Create(builder => builder.ConfigureInputGuards(o => o.MaxInputLength = 8192)).Build();
 
         var result = await guard.CheckInputAsync(new string('a', 8193), TestContext.Current.CancellationToken);
 
@@ -30,7 +30,7 @@ public class LengthLimitTests
     [Fact]
     public async Task CheckInputAsync_PassesAnInputAtTheConfiguredMaximum()
     {
-        var guard = FluxGuard.Create(builder => builder.ConfigureInputGuards(o => o.MaxInputLength = 8192));
+        var guard = FluxGuardBuilder.Create(builder => builder.ConfigureInputGuards(o => o.MaxInputLength = 8192)).Build();
 
         var result = await guard.CheckInputAsync(new string('a', 8192), TestContext.Current.CancellationToken);
 
@@ -41,7 +41,7 @@ public class LengthLimitTests
     [Fact]
     public async Task CheckInputAsync_TreatsZeroAsNoLimit()
     {
-        var guard = FluxGuard.Create(builder => builder.ConfigureInputGuards(o => o.MaxInputLength = 0));
+        var guard = FluxGuardBuilder.Create(builder => builder.ConfigureInputGuards(o => o.MaxInputLength = 0)).Build();
 
         var result = await guard.CheckInputAsync(new string('a', 200_000), TestContext.Current.CancellationToken);
 
@@ -51,7 +51,7 @@ public class LengthLimitTests
     [Fact]
     public async Task CheckOutputAsync_BlocksAnOutputOverTheConfiguredMaximum()
     {
-        var guard = FluxGuard.Create(builder => builder.ConfigureOutputGuards(o => o.MaxOutputLength = 4096));
+        var guard = FluxGuardBuilder.Create(builder => builder.ConfigureOutputGuards(o => o.MaxOutputLength = 4096)).Build();
 
         var blocked = await guard.CheckOutputAsync("question", new string('b', 4097), TestContext.Current.CancellationToken);
         var passed = await guard.CheckOutputAsync("question", new string('b', 4096), TestContext.Current.CancellationToken);
@@ -66,9 +66,9 @@ public class LengthLimitTests
     {
         var hooks = Substitute.For<IFluxGuardHooks>();
         hooks.OnBeforeCheckAsync(Arg.Any<GuardContext>()).Returns(new ValueTask<bool>(true));
-        var guard = FluxGuard.Create(builder => builder
+        var guard = FluxGuardBuilder.Create(builder => builder
             .ConfigureInputGuards(o => o.MaxInputLength = 10)
-            .WithHooks(hooks));
+            .WithHooks(hooks)).Build();
 
         await guard.CheckInputAsync(new string('a', 11), TestContext.Current.CancellationToken);
 

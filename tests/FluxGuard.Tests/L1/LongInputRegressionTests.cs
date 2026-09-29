@@ -25,9 +25,9 @@ public class LongInputRegressionTests
         return sb.ToString();
     }
 
-    private static IFluxGuard CreateStrictClosedGuard() => FluxGuard.Create(builder => builder
+    private static IFluxGuard CreateStrictClosedGuard() => FluxGuardBuilder.Create(builder => builder
         .WithPreset(GuardPreset.Strict)
-        .WithFailMode(FailMode.Closed));
+        .WithFailMode(FailMode.Closed)).Build();
 
     [Fact]
     public async Task CheckOutputAsync_100KBBenignProse_NoGuardError()

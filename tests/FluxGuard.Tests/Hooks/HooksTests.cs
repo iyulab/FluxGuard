@@ -113,7 +113,7 @@ public class LambdaHooksBuilderTests
     public async Task OnBeforeCheck_LambdaIsInvoked()
     {
         var called = false;
-        var guard = FluxGuard.Create(builder =>
+        var guard = FluxGuardBuilder.Create(builder =>
         {
             builder.WithHooks(hooks => hooks
                 .OnBeforeCheck(_ =>
@@ -121,7 +121,7 @@ public class LambdaHooksBuilderTests
                     called = true;
                     return ValueTask.FromResult(true);
                 }));
-        });
+        }).Build();
 
         await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
@@ -132,7 +132,7 @@ public class LambdaHooksBuilderTests
     public async Task OnAfterCheck_LambdaIsInvoked()
     {
         var called = false;
-        var guard = FluxGuard.Create(builder =>
+        var guard = FluxGuardBuilder.Create(builder =>
         {
             builder.WithHooks(hooks => hooks
                 .OnAfterCheck((_, _) =>
@@ -140,7 +140,7 @@ public class LambdaHooksBuilderTests
                     called = true;
                     return ValueTask.CompletedTask;
                 }));
-        });
+        }).Build();
 
         await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 
@@ -151,10 +151,10 @@ public class LambdaHooksBuilderTests
     public async Task NullLambda_FallsBackToBase()
     {
         // Build hooks with no lambda set — should fall back to base class
-        var guard = FluxGuard.Create(builder =>
+        var guard = FluxGuardBuilder.Create(builder =>
         {
             builder.WithHooks(_ => { /* no hooks configured */ });
-        });
+        }).Build();
 
         var result = await guard.CheckInputAsync("test", TestContext.Current.CancellationToken);
 

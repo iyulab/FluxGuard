@@ -77,9 +77,8 @@ async Task<string?> ReplyAsync(string userMessage)
 }
 ```
 
-The static factory `FluxGuard.Create()` / `FluxGuard.Create(builder => ...)` builds the same thing, but the class has
-the name of its namespace: from code outside the `FluxGuard` namespace, `FluxGuard.Create` resolves to the namespace and
-does not compile. Write `FluxGuard.FluxGuard.Create()`, or use `FluxGuardBuilder` as this README does.
+`FluxGuardBuilder` is the one entry point. To configure in a single expression, pass the configuration to `Create`:
+`FluxGuardBuilder.Create(b => b.WithPreset(GuardPreset.Strict)).Build()`.
 
 **This alone provides (standard preset, L1):**
 - Prompt injection detection ✅

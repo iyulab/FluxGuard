@@ -4,6 +4,21 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.18.0 - Unreleased
+
+### Changed
+
+- **Breaking: the static `FluxGuard` class (`FluxGuard.Create()`, `FluxGuard.Create(configure)`) is removed.** It had
+  the name of its namespace, so code outside that namespace could not call it without full qualification
+  (`FluxGuard.Create` bound to the namespace, CS0234). `FluxGuardBuilder` is the one entry point.
+  Migration: `FluxGuard.Create()` → `FluxGuardBuilder.Create().Build()`; `FluxGuard.Create(configure)` →
+  `FluxGuardBuilder.Create(configure).Build()`.
+
+### Added
+
+- `FluxGuardBuilder.Create(Action<FluxGuardBuilder> configure)` returns a configured builder, so a guard can be built
+  in one expression.
+
 ## 0.17.1 - 2026-09-30
 
 ### Fixed

@@ -271,7 +271,7 @@ public class StrictPresetTests
     {
         // Strict preset has BlockThreshold=0.8 vs Standard 0.9
         // Verify it builds and functions with stricter settings
-        var guard = FluxGuard.Create(builder => builder.ApplyStrictPreset());
+        var guard = FluxGuardBuilder.Create(builder => builder.ApplyStrictPreset()).Build();
 
         // Safe input should still pass
         var result = await guard.CheckInputAsync("Hello, how are you?", TestContext.Current.CancellationToken);

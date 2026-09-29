@@ -21,7 +21,7 @@ public class PipelineStatsTests
     public async Task WithStats_RecordsEveryCheckAndEveryGuard()
     {
         var stats = new InMemoryStatsCollector();
-        var guard = FluxGuard.Create(builder => builder.WithStats(stats));
+        var guard = FluxGuardBuilder.Create(builder => builder.WithStats(stats)).Build();
 
         await guard.CheckInputAsync(Injection, TestContext.Current.CancellationToken);
         await guard.CheckInputAsync("What is the capital of France?", TestContext.Current.CancellationToken);
@@ -45,7 +45,7 @@ public class PipelineStatsTests
         broken.CheckAsync(Arg.Any<GuardContext>())
             .Returns<ValueTask<GuardCheckResult>>(_ => throw new InvalidOperationException("boom"));
         var stats = new InMemoryStatsCollector();
-        var guard = FluxGuard.Create(builder => builder.WithFailMode(FailMode.Open).WithStats(stats).AddInputGuard(broken));
+        var guard = FluxGuardBuilder.Create(builder => builder.WithFailMode(FailMode.Open).WithStats(stats).AddInputGuard(broken)).Build();
 
         await guard.CheckInputAsync("hello", TestContext.Current.CancellationToken);
 
@@ -57,7 +57,7 @@ public class PipelineStatsTests
     {
         // The counterpart: a collector fed from somewhere global would pass the facts above without WithStats.
         var stats = new InMemoryStatsCollector();
-        var guard = FluxGuard.Create();
+        var guard = FluxGuardBuilder.Create().Build();
 
         await guard.CheckInputAsync(Injection, TestContext.Current.CancellationToken);
 

@@ -20,11 +20,11 @@ public class GuardTimeoutTests
     public async Task CheckInputAsync_FailOpen_SkipsAGuardThatOutlivesTheTimeout()
     {
         var hooks = new RecordingHooks();
-        var guard = FluxGuard.Create(builder => builder
+        var guard = FluxGuardBuilder.Create(builder => builder
             .Configure(o => o.GuardTimeoutMs = 100)
             .WithFailMode(FailMode.Open)
             .WithHooks(hooks)
-            .AddInputGuard(new SlowGuard(GuardDelay)));
+            .AddInputGuard(new SlowGuard(GuardDelay))).Build();
 
         var stopwatch = Stopwatch.StartNew();
         var result = await guard.CheckInputAsync("hello", TestContext.Current.CancellationToken);
@@ -38,10 +38,10 @@ public class GuardTimeoutTests
     [Fact]
     public async Task CheckInputAsync_FailClosed_BlocksWhenAGuardOutlivesTheTimeout()
     {
-        var guard = FluxGuard.Create(builder => builder
+        var guard = FluxGuardBuilder.Create(builder => builder
             .Configure(o => o.GuardTimeoutMs = 100)
             .WithFailMode(FailMode.Closed)
-            .AddInputGuard(new SlowGuard(GuardDelay)));
+            .AddInputGuard(new SlowGuard(GuardDelay))).Build();
 
         var stopwatch = Stopwatch.StartNew();
         var result = await guard.CheckInputAsync("hello", TestContext.Current.CancellationToken);
@@ -56,10 +56,10 @@ public class GuardTimeoutTests
     public async Task CheckInputAsync_KeepsTheVerdictOfAGuardThatAnswersInTime()
     {
         // The counterpart: a timeout that fired on every guard would pass the two facts above as well.
-        var guard = FluxGuard.Create(builder => builder
+        var guard = FluxGuardBuilder.Create(builder => builder
             .Configure(o => o.GuardTimeoutMs = 30_000)
             .WithFailMode(FailMode.Open)
-            .AddInputGuard(new SlowGuard(TimeSpan.FromMilliseconds(50))));
+            .AddInputGuard(new SlowGuard(TimeSpan.FromMilliseconds(50)))).Build();
 
         var result = await guard.CheckInputAsync("hello", TestContext.Current.CancellationToken);
 
@@ -70,10 +70,10 @@ public class GuardTimeoutTests
     [Fact]
     public async Task CheckInputAsync_TreatsZeroAsNoTimeout()
     {
-        var guard = FluxGuard.Create(builder => builder
+        var guard = FluxGuardBuilder.Create(builder => builder
             .Configure(o => o.GuardTimeoutMs = 0)
             .WithFailMode(FailMode.Open)
-            .AddInputGuard(new SlowGuard(TimeSpan.FromMilliseconds(300))));
+            .AddInputGuard(new SlowGuard(TimeSpan.FromMilliseconds(300)))).Build();
 
         var result = await guard.CheckInputAsync("hello", TestContext.Current.CancellationToken);
 
@@ -83,10 +83,10 @@ public class GuardTimeoutTests
     [Fact]
     public async Task CheckOutputAsync_FailClosed_BlocksWhenAGuardOutlivesTheTimeout()
     {
-        var guard = FluxGuard.Create(builder => builder
+        var guard = FluxGuardBuilder.Create(builder => builder
             .Configure(o => o.GuardTimeoutMs = 100)
             .WithFailMode(FailMode.Closed)
-            .AddOutputGuard(new SlowGuard(GuardDelay)));
+            .AddOutputGuard(new SlowGuard(GuardDelay))).Build();
 
         var stopwatch = Stopwatch.StartNew();
         var result = await guard.CheckOutputAsync("question", "answer", TestContext.Current.CancellationToken);
@@ -99,9 +99,9 @@ public class GuardTimeoutTests
     [Fact]
     public async Task CheckInputAsync_CallerCancellationIsNotReportedAsATimeout()
     {
-        var guard = FluxGuard.Create(builder => builder
+        var guard = FluxGuardBuilder.Create(builder => builder
             .Configure(o => o.GuardTimeoutMs = 30_000)
-            .AddInputGuard(new SlowGuard(GuardDelay)));
+            .AddInputGuard(new SlowGuard(GuardDelay))).Build();
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         cts.CancelAfter(100);
 

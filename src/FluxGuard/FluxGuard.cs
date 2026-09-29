@@ -738,31 +738,3 @@ internal sealed partial class FluxGuardCore : IFluxGuard
     [LoggerMessage(LogLevel.Warning, "L3 remote guard {GuardName} failed for request {RequestId}")]
     private static partial void LogRemoteGuardFailed(ILogger logger, Exception ex, string guardName, string requestId);
 }
-
-/// <summary>
-/// FluxGuard static factory
-/// </summary>
-public static class FluxGuard
-{
-    /// <summary>
-    /// Create FluxGuard instance with default settings
-    /// Standard preset, which resolves FailMode to Open
-    /// </summary>
-    /// <returns>FluxGuard instance</returns>
-    public static IFluxGuard Create()
-    {
-        return FluxGuardBuilder.Create().Build();
-    }
-
-    /// <summary>
-    /// Create FluxGuard instance with builder
-    /// </summary>
-    /// <param name="configure">Builder configuration action</param>
-    /// <returns>FluxGuard instance</returns>
-    public static IFluxGuard Create(Action<FluxGuardBuilder> configure)
-    {
-        var builder = FluxGuardBuilder.Create();
-        configure(builder);
-        return builder.Build();
-    }
-}

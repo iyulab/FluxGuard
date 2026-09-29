@@ -37,6 +37,20 @@ public sealed class FluxGuardBuilder
     public static FluxGuardBuilder Create() => new();
 
     /// <summary>
+    /// Creates a builder and applies <paramref name="configure"/> to it — the one-expression form of
+    /// <see cref="Create()"/> followed by configuration calls: <c>FluxGuardBuilder.Create(b => b.WithPreset(...)).Build()</c>.
+    /// </summary>
+    /// <param name="configure">Configuration applied to the new builder.</param>
+    /// <returns>The configured builder.</returns>
+    public static FluxGuardBuilder Create(Action<FluxGuardBuilder> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        var builder = new FluxGuardBuilder();
+        configure(builder);
+        return builder;
+    }
+
+    /// <summary>
     /// Set preset
     /// </summary>
     /// <param name="preset">Guard preset</param>

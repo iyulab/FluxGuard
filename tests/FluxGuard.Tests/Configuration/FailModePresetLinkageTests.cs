@@ -29,9 +29,9 @@ public class FailModePresetLinkageTests
     [Fact]
     public async Task StrictPreset_WhenGuardThrows_BlocksTheRequest()
     {
-        var guard = FluxGuard.Create(b => b
+        var guard = FluxGuardBuilder.Create(b => b
             .WithPreset(GuardPreset.Strict)
-            .AddInputGuard(new ThrowingInputGuard()));
+            .AddInputGuard(new ThrowingInputGuard())).Build();
 
         var result = await guard.CheckInputAsync("hello", TestContext.Current.CancellationToken);
 
@@ -44,10 +44,10 @@ public class FailModePresetLinkageTests
     [Fact]
     public async Task StrictPreset_WithExplicitOpen_PassesWhenGuardThrows()
     {
-        var guard = FluxGuard.Create(b => b
+        var guard = FluxGuardBuilder.Create(b => b
             .WithPreset(GuardPreset.Strict)
             .WithFailMode(FailMode.Open)
-            .AddInputGuard(new ThrowingInputGuard()));
+            .AddInputGuard(new ThrowingInputGuard())).Build();
 
         var result = await guard.CheckInputAsync("hello", TestContext.Current.CancellationToken);
 
@@ -73,9 +73,9 @@ public class FailModePresetLinkageTests
     [InlineData(GuardPreset.Standard)]
     public async Task NonStrictPresets_WhenGuardThrows_StillPass(GuardPreset preset)
     {
-        var guard = FluxGuard.Create(b => b
+        var guard = FluxGuardBuilder.Create(b => b
             .WithPreset(preset)
-            .AddInputGuard(new ThrowingInputGuard()));
+            .AddInputGuard(new ThrowingInputGuard())).Build();
 
         var result = await guard.CheckInputAsync("hello", TestContext.Current.CancellationToken);
 

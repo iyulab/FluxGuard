@@ -160,7 +160,7 @@ dotnet add package FluxGuard.SDK     # For framework integrations
 
 | Setting | Default |
 |---------|---------|
-| `FluxGuard.Create()` | `GuardPreset.Standard` |
+| `FluxGuardBuilder.Create().Build()` | `GuardPreset.Standard` |
 | Input Guards | All L1+L2 guards ON |
 | Output Guards | Toxicity, PII, Format, Refusal ON |
 | FailMode | `Open` (pass) |
