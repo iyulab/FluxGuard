@@ -43,45 +43,8 @@ public static class ServiceCollectionExtensions
         // Register options
         services.Configure(configure);
 
-        // Register pattern registry as singleton
-        services.TryAddSingleton<IPatternRegistry, PatternRegistry>();
-
-        // Register hooks
-        services.TryAddSingleton<IFluxGuardHooks, FluxGuardHooks>();
-
-        // Register FluxGuard
-        services.TryAddSingleton<IFluxGuard>(sp =>
-        {
-            var options = sp.GetRequiredService<IOptions<FluxGuardOptions>>().Value;
-            var registry = sp.GetRequiredService<IPatternRegistry>();
-            var hooks = sp.GetRequiredService<IFluxGuardHooks>();
-            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-
-            var builder = FluxGuardBuilder.Create()
-                .Configure(options.CopyTo)
-                .WithHooks(hooks)
-                .WithLogging(loggerFactory);
-
-            // The preset's guards are created in Build(), from these options and this registry - the same
-            // path a hand-built FluxGuardBuilder takes.
-            builder.WithPatternRegistry(registry).RequestPreset(options.Preset);
-
-            // Register L3 remote guards from DI container
-            foreach (var remoteGuard in sp.GetServices<IRemoteGuard>())
-            {
-                builder.AddRemoteGuard(remoteGuard);
-            }
-
-            // A registered statistics collector is fed by the pipeline; none registered, nothing is recorded.
-            if (sp.GetService<IGuardStatsCollector>() is { } stats)
-            {
-                builder.WithStats(stats);
-            }
-
-            return builder.Build();
-        });
-
-        return services;
+        // Options alone: the preset named in the options supplies the guards.
+        return services.AddFluxGuardCore(configureBuilder: null);
     }
 
     /// <summary>
@@ -110,16 +73,63 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         Action<FluxGuardBuilder, IServiceProvider> configureBuilder)
     {
+        ArgumentNullException.ThrowIfNull(configureBuilder);
+        return services.AddFluxGuardCore(configureBuilder);
+    }
+
+    /// <summary>
+    /// The one registration every <c>AddFluxGuard</c> overload shares. The guard is seeded from the container —
+    /// <see cref="FluxGuardOptions"/> (including what <c>AddFluxGuardRemote</c> configures), the pattern registry, hooks,
+    /// logging, every registered <see cref="IRemoteGuard"/> and an <see cref="IGuardStatsCollector"/> if one is
+    /// registered — and <paramref name="configureBuilder"/>, when given, runs last so it can override any of them.
+    /// </summary>
+    private static IServiceCollection AddFluxGuardCore(
+        this IServiceCollection services,
+        Action<FluxGuardBuilder, IServiceProvider>? configureBuilder)
+    {
+        // Register pattern registry as singleton
         services.TryAddSingleton<IPatternRegistry, PatternRegistry>();
+
+        // Register hooks
         services.TryAddSingleton<IFluxGuardHooks, FluxGuardHooks>();
 
+        // Register FluxGuard
         services.TryAddSingleton<IFluxGuard>(sp =>
         {
+            var options = sp.GetRequiredService<IOptions<FluxGuardOptions>>().Value;
+            var registry = sp.GetRequiredService<IPatternRegistry>();
+            var hooks = sp.GetRequiredService<IFluxGuardHooks>();
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-            var builder = FluxGuardBuilder.Create()
-                .WithLogging(loggerFactory);
 
-            configureBuilder(builder, sp);
+            var builder = FluxGuardBuilder.Create()
+                .Configure(options.CopyTo)
+                .WithHooks(hooks)
+                .WithLogging(loggerFactory)
+                .WithPatternRegistry(registry);
+
+            // Register L3 remote guards from DI container
+            foreach (var remoteGuard in sp.GetServices<IRemoteGuard>())
+            {
+                builder.AddRemoteGuard(remoteGuard);
+            }
+
+            // A registered statistics collector is fed by the pipeline; none registered, nothing is recorded.
+            if (sp.GetService<IGuardStatsCollector>() is { } stats)
+            {
+                builder.WithStats(stats);
+            }
+
+            if (configureBuilder is null)
+            {
+                // The preset's guards are created in Build(), from these options and this registry - the same
+                // path a hand-built FluxGuardBuilder takes.
+                builder.RequestPreset(options.Preset);
+            }
+            else
+            {
+                // Like a hand-built builder: guards the action adds replace the preset's, and a preset it names wins.
+                configureBuilder(builder, sp);
+            }
 
             return builder.Build();
         });

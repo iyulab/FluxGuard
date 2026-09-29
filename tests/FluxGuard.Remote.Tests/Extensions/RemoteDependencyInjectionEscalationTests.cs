@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using FluxGuard.Configuration;
 using FluxGuard.Extensions;
+using FluxGuard.Presets;
 using FluxGuard.Remote.Abstractions;
 using FluxGuard.Remote.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +36,29 @@ public class RemoteDependencyInjectionEscalationTests
         services.AddFluxGuard();
         services.AddFluxGuardRemote("unused", o => o.Judge.Model = "judge");
         services.AddSingleton(judgeModel);   // the judge's model call, instead of OpenAI
+        using var provider = services.BuildServiceProvider();
+
+        await provider.GetRequiredService<IFluxGuard>().CheckInputAsync(Ambiguous, TestContext.Current.CancellationToken);
+
+        await judgeModel.Received(1).CompleteAsync(Arg.Any<CompletionRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AddFluxGuardRemote_JudgeIsAsked_WhenTheGuardIsRegisteredThroughTheBuilderOverload()
+    {
+        // The builder overload used to start from an empty builder, so the options AddFluxGuardRemote sets and the
+        // judge it registers never reached the pipeline.
+        var judgeModel = Substitute.For<IRemoteLlmService>();
+        judgeModel.IsAvailable.Returns(true);
+        judgeModel.CompleteAsync(Arg.Any<CompletionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(CompletionResponse.Ok("""{"is_safe": true, "confidence": 0.9, "category": "safe", "reasoning": "benign"}"""));
+
+        var services = new ServiceCollection();
+        services.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
+        services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
+        services.AddFluxGuard((builder, _) => builder.ApplyStandardPreset());
+        services.AddFluxGuardRemote("unused", o => o.Judge.Model = "judge");
+        services.AddSingleton(judgeModel);
         using var provider = services.BuildServiceProvider();
 
         await provider.GetRequiredService<IFluxGuard>().CheckInputAsync(Ambiguous, TestContext.Current.CancellationToken);

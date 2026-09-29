@@ -8,15 +8,22 @@ namespace FluxGuard.L1.Patterns;
 /// Pattern matching engine
 /// High-performance regex-based pattern detection
 /// </summary>
+/// <remarks>
+/// Each pattern's <see cref="Regex"/> carries its own match timeout (the built-in patterns are source-generated with
+/// one second). A pattern that times out is reported as a <see cref="PatternMatch.TimedOut"/> match, or as a match by
+/// <see cref="IsMatch"/>, rather than skipped.
+/// </remarks>
 public sealed class PatternEngine
 {
     private readonly IPatternRegistry _registry;
-    private readonly TimeSpan _matchTimeout;
 
-    public PatternEngine(IPatternRegistry registry, TimeSpan? matchTimeout = null)
+    /// <summary>
+    /// Creates an engine over the patterns in <paramref name="registry"/>.
+    /// </summary>
+    public PatternEngine(IPatternRegistry registry)
     {
+        ArgumentNullException.ThrowIfNull(registry);
         _registry = registry;
-        _matchTimeout = matchTimeout ?? TimeSpan.FromMilliseconds(100);
     }
 
     /// <summary>
@@ -55,7 +62,8 @@ public sealed class PatternEngine
             }
             catch (RegexMatchTimeoutException)
             {
-                // Skip this pattern on timeout
+                // A timed-out pattern is reported as a medium-severity match, not skipped: an input crafted to
+                // stall a pattern must not pass as clean.
                 matches.Add(new PatternMatch
                 {
                     PatternId = pattern.Id,

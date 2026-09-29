@@ -20,14 +20,9 @@ public static class StrictPreset
     {
         builder.RequestPreset(Core.GuardPreset.Strict);
 
-        // Configure stricter thresholds
-        builder.Configure(opts =>
-        {
-            opts.Preset = Core.GuardPreset.Strict;
-            opts.BlockThreshold = 0.8;      // Lower than standard (0.9)
-            opts.FlagThreshold = 0.5;       // Lower than standard (0.7)
-            opts.EscalationThreshold = 0.3; // Lower than standard (0.5)
-        });
+        // The stricter thresholds (block 0.8, flag 0.5, escalation 0.3) follow from the preset in FluxGuardOptions, so
+        // every way of choosing Strict — this method, WithPreset, or options bound from configuration — gets them.
+        builder.Configure(opts => opts.Preset = Core.GuardPreset.Strict);
 
         return builder;
     }

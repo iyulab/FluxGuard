@@ -56,19 +56,41 @@ public sealed class FluxGuardOptions
     public bool EnableL3Escalation { get; set; }
 
     /// <summary>
-    /// Block threshold (default: 0.9)
+    /// Score at or above which a check blocks. When left unset, it is derived from <see cref="Preset"/>:
+    /// 0.8 for <see cref="GuardPreset.Strict"/>, 0.9 otherwise. Assigning it always wins, whichever order it is set in.
     /// </summary>
-    public double BlockThreshold { get; set; } = 0.9;
+    public double BlockThreshold
+    {
+        get => _blockThreshold ?? (Preset == GuardPreset.Strict ? 0.8 : 0.9);
+        set => _blockThreshold = value;
+    }
+
+    private double? _blockThreshold;
 
     /// <summary>
-    /// Flag threshold (default: 0.7)
+    /// Score at or above which a check is flagged. When left unset, it is derived from <see cref="Preset"/>:
+    /// 0.5 for <see cref="GuardPreset.Strict"/>, 0.7 otherwise. Assigning it always wins, whichever order it is set in.
     /// </summary>
-    public double FlagThreshold { get; set; } = 0.7;
+    public double FlagThreshold
+    {
+        get => _flagThreshold ?? (Preset == GuardPreset.Strict ? 0.5 : 0.7);
+        set => _flagThreshold = value;
+    }
+
+    private double? _flagThreshold;
 
     /// <summary>
-    /// Escalation threshold (default: 0.5)
+    /// Score at or above which an uncertain check is escalated to the remote (L3) guard. When left unset, it is
+    /// derived from <see cref="Preset"/>: 0.3 for <see cref="GuardPreset.Strict"/>, 0.5 otherwise. Assigning it always
+    /// wins, whichever order it is set in.
     /// </summary>
-    public double EscalationThreshold { get; set; } = 0.5;
+    public double EscalationThreshold
+    {
+        get => _escalationThreshold ?? (Preset == GuardPreset.Strict ? 0.3 : 0.5);
+        set => _escalationThreshold = value;
+    }
+
+    private double? _escalationThreshold;
 
     /// <summary>
     /// How long the pipeline waits for one guard, in milliseconds (default: 5000; 0 = no timeout).
@@ -107,9 +129,10 @@ public sealed class FluxGuardOptions
             target.FailMode = FailMode;
         }
         target.EnableL3Escalation = EnableL3Escalation;
-        target.BlockThreshold = BlockThreshold;
-        target.FlagThreshold = FlagThreshold;
-        target.EscalationThreshold = EscalationThreshold;
+        // Same for the thresholds: an unset one keeps following the preset.
+        target._blockThreshold = _blockThreshold;
+        target._flagThreshold = _flagThreshold;
+        target._escalationThreshold = _escalationThreshold;
         target.EscalationTimeoutMs = EscalationTimeoutMs;
         target.GuardTimeoutMs = GuardTimeoutMs;
         target.InputGuards = InputGuards;

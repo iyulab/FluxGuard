@@ -14,6 +14,21 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   Migration: `FluxGuard.Create()` → `FluxGuardBuilder.Create().Build()`; `FluxGuard.Create(configure)` →
   `FluxGuardBuilder.Create(configure).Build()`.
 
+- **Breaking: `PatternEngine`'s `matchTimeout` constructor parameter is removed.** It was stored and never read: each
+  pattern's regex carries its own timeout (one second for the built-in, source-generated patterns), so the value had no
+  effect. Migration: drop the argument; set a timeout on the `Regex` of a custom pattern instead.
+
+### Fixed
+
+- **The Strict preset has the same thresholds however it is chosen.** `ApplyStrictPreset()` lowered the block, flag
+  and escalation thresholds to 0.8 / 0.5 / 0.3, but `WithPreset(GuardPreset.Strict)` and options with
+  `Preset = Strict` (for example bound from configuration) kept the standard 0.9 / 0.7 / 0.5. The thresholds now
+  follow the preset unless set explicitly, the same way `FailMode` does; an explicit value wins in either order.
+- **`AddFluxGuard((builder, services) => ...)` builds from the container like the other overloads.** It started from
+  an empty builder, so the options `AddFluxGuardRemote` configures, the judge it registers, other registered
+  `IRemoteGuard`s, a registered `IGuardStatsCollector`, the registered pattern registry and hooks never reached the
+  guard. They are now applied first and the action runs last, so it can still override any of them.
+
 ### Added
 
 - `FluxGuardBuilder.Create(Action<FluxGuardBuilder> configure)` returns a configured builder, so a guard can be built
