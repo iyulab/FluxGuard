@@ -1,4 +1,5 @@
 using FluxGuard.Abstractions;
+using FluxGuard.Configuration;
 using FluxGuard.Remote.Abstractions;
 using FluxGuard.Remote.Caching;
 using FluxGuard.Remote.Configuration;
@@ -235,6 +236,15 @@ public static class ServiceCollectionExtensions
         Action<RemoteGuardOptions> configure)
     {
         services.Configure(configure);
+
+        // What WithRemoteGuard does on the builder: the pipeline escalates only when EnableL3Escalation is on, and the
+        // remote timeout bounds the escalation. Without this the registered judge was never asked.
+        services.AddOptions<FluxGuardOptions>()
+            .PostConfigure<IOptions<RemoteGuardOptions>>((options, remote) =>
+            {
+                options.EnableL3Escalation = true;
+                options.EscalationTimeoutMs = remote.Value.TimeoutMs;
+            });
 
         services.AddSingleton<ISemanticCache, InMemorySemanticCache>();
         services.AddSingleton<IRemoteLlmService, OpenAICompletionService>();

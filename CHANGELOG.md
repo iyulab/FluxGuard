@@ -4,6 +4,16 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.17.1 - Unreleased
+
+### Fixed
+
+- **A judge registered with `AddFluxGuardRemote` is now asked about escalated checks.** The registration added the
+  judge to the container, and `AddFluxGuard` handed it to the pipeline, but nothing turned on
+  `FluxGuardOptions.EnableL3Escalation` — only `WithRemoteGuard` on the builder did — so the pipeline never escalated
+  and the judge never ran. `AddFluxGuardRemote` now turns escalation on and sets `EscalationTimeoutMs` from
+  `RemoteGuardOptions.TimeoutMs`, as the builder does. Checks the local guards escalate now make a model call.
+
 ## 0.17.0
 
 ### Fixed
