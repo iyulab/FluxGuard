@@ -24,6 +24,7 @@
     <PackageReference Include="AwesomeAssertions" />
     <PackageReference Include="NSubstitute" />
     <PackageReference Include="Iyu.Conventions.Testing" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
   </ItemGroup>
 
   <ItemGroup>

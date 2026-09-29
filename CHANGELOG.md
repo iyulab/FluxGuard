@@ -13,11 +13,18 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   `FluxGuardOptions.EnableL3Escalation` — only `WithRemoteGuard` on the builder did — so the pipeline never escalated
   and the judge never ran. `AddFluxGuardRemote` now turns escalation on and sets `EscalationTimeoutMs` from
   `RemoteGuardOptions.TimeoutMs`, as the builder does. Checks the local guards escalate now make a model call.
-
 - **The minimal preset follows the guard switches and the PII language list.** It built its three guards
   unconditionally, so `EnablePromptInjection`, `EnableJailbreak` and `EnablePIILeakage` set to `false` left the guard
   running, and its output PII guard ignored `SupportedLanguages` and loaded every pattern set. The standard and strict
   presets honoured all four; the minimal one now does too, on the builder and through `AddFluxGuard`.
+- **Every C# example in the README now compiles against the current API, and a test keeps it that way.** None of the
+  fifteen blocks compiled: most called `FluxGuard.Create(...)`, which does not resolve outside the `FluxGuard` namespace,
+  and none stated its usings. The examples now use `FluxGuardBuilder` and state their usings, and the README says how to
+  reach the static factory (`FluxGuard.FluxGuard.Create()`).
+- **The README's claims about thresholds, languages, regex timeouts and the remote judge match the code.** Only
+  `ApplyStrictPreset()` lowers the pipeline thresholds; `SupportedLanguages` lists ten codes but only `en`, `ko` and `ja`
+  have pattern sets; a regex match timeout counts as a medium match, not a guard error; the judge runs only on escalated
+  checks, and the groundedness guard (`L3HallucinationGuard`) is added by hand.
 
 ## 0.17.0
 

@@ -53,24 +53,33 @@ dotnet add package FluxGuard.SDK
 ## Quick Start
 
 ```csharp
+using FluxGuard;
+
 // One line: the standard preset (the L1 pattern guards below)
-var guard = FluxGuard.Create();
+IFluxGuard guard = FluxGuardBuilder.Create().Build();
 
-var inputCheck = await guard.CheckInputAsync(userMessage);
-if (inputCheck.IsBlocked)
+async Task<string?> ReplyAsync(string userMessage)
 {
-    return inputCheck.BlockReason;
-}
+    var inputCheck = await guard.CheckInputAsync(userMessage);
+    if (inputCheck.IsBlocked)
+    {
+        return inputCheck.BlockReason;
+    }
 
-var response = await llm.CompleteAsync(userMessage);
+    var response = await llm.CompleteAsync(userMessage);   // your model call
 
-var outputCheck = await guard.CheckOutputAsync(userMessage, response);
-if (outputCheck.IsBlocked)
-{
-    return outputCheck.BlockReason;
+    var outputCheck = await guard.CheckOutputAsync(userMessage, response);
+    if (outputCheck.IsBlocked)
+    {
+        return outputCheck.BlockReason;
+    }
+    return response;
 }
-return response;
 ```
+
+The static factory `FluxGuard.Create()` / `FluxGuard.Create(builder => ...)` builds the same thing, but the class has
+the name of its namespace: from code outside the `FluxGuard` namespace, `FluxGuard.Create` resolves to the namespace and
+does not compile. Write `FluxGuard.FluxGuard.Create()`, or use `FluxGuardBuilder` as this README does.
 
 **This alone provides (standard preset, L1):**
 - Prompt injection detection ✅
@@ -145,7 +154,10 @@ Groundedness / hallucination checks live in the `FluxGuard.Remote` package.
 ### Builder Pattern
 
 ```csharp
-var guard = FluxGuard.Create(builder => builder
+using FluxGuard;
+using FluxGuard.Presets;
+
+var guard = FluxGuardBuilder.Create()
     .ApplyStandardPreset()
     .ConfigureInputGuards(opt =>
     {
@@ -155,23 +167,32 @@ var guard = FluxGuard.Create(builder => builder
     .ConfigureOutputGuards(opt =>
     {
         opt.MaxOutputLength = 4096;
-    }));
+    })
+    .Build();
 ```
 
 ### Presets
 
 ```csharp
-// Standard (default)
-var guard = FluxGuard.Create();
-var guard = FluxGuard.Create(b => b.WithPreset(GuardPreset.Standard));
+using FluxGuard;
+using FluxGuard.Core;
+using FluxGuard.Presets;
 
-// Strict - every standard guard with lower escalation thresholds; ApplyStrictPreset() also lowers
-// the block / flag thresholds
-var guard = FluxGuard.Create(b => b.ApplyStrictPreset());
+// Standard (default)
+var standard = FluxGuardBuilder.Create().Build();
+var alsoStandard = FluxGuardBuilder.Create().WithPreset(GuardPreset.Standard).Build();
+
+// Strict - every standard guard with lower escalation thresholds (0.3); ApplyStrictPreset() also lowers
+// the block / flag thresholds (0.8 / 0.5)
+var strict = FluxGuardBuilder.Create().ApplyStrictPreset().Build();
 
 // Minimal - prompt injection, jailbreak and PII leakage only, minimum latency
-var guard = FluxGuard.Create(b => b.ApplyMinimalPreset());
+var minimal = FluxGuardBuilder.Create().ApplyMinimalPreset().Build();
 ```
+
+Only `ApplyStrictPreset()` lowers the pipeline's block / flag / escalation thresholds. `WithPreset(GuardPreset.Strict)`,
+and `Preset = Strict` in `FluxGuardOptions` (dependency injection, configuration), give the strict guards but keep the
+standard thresholds (0.9 / 0.7 / 0.5); set `BlockThreshold` / `FlagThreshold` / `EscalationThreshold` yourself there.
 
 Switches set with `ConfigureInputGuards` / `ConfigureOutputGuards` apply to the preset's guards whether they
 are set before or after the preset is chosen.
@@ -179,6 +200,9 @@ are set before or after the preset is chosen.
 ### Dependency Injection
 
 ```csharp
+using FluxGuard.Core;
+using FluxGuard.Extensions;
+
 // Default registration - Standard preset
 services.AddFluxGuard();
 
@@ -201,8 +225,12 @@ dotnet add package FluxGuard.Remote
 ```
 
 ```csharp
+using FluxGuard;
+using FluxGuard.Extensions;
+using FluxGuard.Remote.Extensions;
+
 // OpenAI — model must be set explicitly (no default since 0.11.0)
-IFluxGuard guard = FluxGuardBuilder.Create()
+IFluxGuard openAiJudged = FluxGuardBuilder.Create()
     .WithRemoteGuard("your-openai-api-key")
     .WithModel("gpt-4o-mini")
     .WithTimeout(200)             // the local verdict stands when the judge takes longer
@@ -211,7 +239,7 @@ IFluxGuard guard = FluxGuardBuilder.Create()
     .Build();
 
 // Bring your own IRemoteLlmService
-IFluxGuard guard = FluxGuardBuilder.Create()
+IFluxGuard ownModelJudged = FluxGuardBuilder.Create()
     .WithRemoteGuard("unused")
     .WithModel("my-model")
     .WithCompletionService(myLlmService)
@@ -223,14 +251,22 @@ services.AddFluxGuard();
 services.AddFluxGuardRemote("your-openai-api-key", opt =>
 {
     opt.Judge.Model = "gpt-4o-mini";
-    opt.TimeoutMs = 200;
+    opt.TimeoutMs = 200;          // how long a check waits for the judge
 });
 ```
 
+The judge is not asked about every check: it runs when a local guard escalates (a pattern match that is suspicious but
+not conclusive) and the pipeline's score lands between `EscalationThreshold` (0.5) and `BlockThreshold` (0.9). Clear
+passes and clear blocks never reach it. Both registrations turn escalation on (`FluxGuardOptions.EnableL3Escalation`)
+and set `EscalationTimeoutMs` from the remote timeout.
+
 **Remote provides:**
 - LLM-as-Judge analysis of what the local guards escalate
-- Caching of judge verdicts
-- Hallucination / groundedness detection (L3)
+- Caching of judge verdicts (in memory, `CacheTtlSeconds`, `MaxCacheEntries`)
+- Groundedness checking of responses: `L3HallucinationGuard`, an output guard built on `GroundednessVerifier`. Neither
+  registration above adds it — construct it and pass it to `FluxGuardBuilder.AddOutputGuard(...)`. It checks a response
+  only when the check's `GuardContext.Metadata` carries the source text under `L3HallucinationGuard.GroundingContextKey`
+  (call `CheckOutputAsync(GuardContext, output)`); without it the guard passes.
 
 A judge or detector that cannot answer is a guard error, so `FailMode` decides: passed under `Open`, blocked under
 `Closed`.
@@ -242,6 +278,9 @@ MCP servers and want tool-poisoning defenses on that channel. Nothing else in `F
 registers or requires it.
 
 ```csharp
+using FluxGuard.Remote.Extensions;
+using FluxGuard.Remote.MCP;
+
 // DI (ASP.NET Core)
 services.AddFluxGuardMcpGuardrail();
 
@@ -272,6 +311,9 @@ applications indexing untrusted or third-party content that want indirect-prompt
 defenses on that channel. Nothing else in `FluxGuard.Remote` registers or requires it.
 
 ```csharp
+using FluxGuard.Remote.Extensions;
+using FluxGuard.Remote.RAG;
+
 // DI (ASP.NET Core)
 services.AddFluxGuardRagSecurity();
 
@@ -305,6 +347,9 @@ dotnet add package FluxGuard.SDK
 
 ```csharp
 // Program.cs
+using FluxGuard.Extensions;
+using FluxGuard.SDK.AspNetCore.Extensions;
+
 builder.Services.AddFluxGuard();
 builder.Services.AddFluxGuardMiddleware(o =>
 {
@@ -322,6 +367,10 @@ The middleware checks the body of POST / PUT / PATCH requests. A blocked request
 ### Microsoft.Extensions.AI
 
 ```csharp
+using FluxGuard.SDK.AI.ChatClient;
+using FluxGuard.SDK.AI.Extensions;
+using Microsoft.Extensions.AI;
+
 var chatClient = new ChatClientBuilder(innerClient)
     .UseFluxGuard(new FluxGuardChatClientOptions
     {
@@ -341,7 +390,10 @@ exception arrives after the last one and is the caller's signal to retract what 
 Intercept at every decision point.
 
 ```csharp
-var guard = FluxGuard.Create(builder => builder.WithHooks(hooks => hooks
+using FluxGuard;
+using FluxGuard.Hooks;
+
+var guard = FluxGuardBuilder.Create().WithHooks(hooks => hooks
     // Return false to skip the check entirely
     .OnBeforeCheck(ctx => ValueTask.FromResult(true))
     .OnAfterCheck((ctx, result) => { /* audit */ return ValueTask.CompletedTask; })
@@ -352,7 +404,8 @@ var guard = FluxGuard.Create(builder => builder.WithHooks(hooks => hooks
     .OnCustomDecision((ctx, result) => ValueTask.FromResult(
         ctx.UserId == "admin" ? FailDecision.AllowPass("admin bypass") : null))
     // A guard threw or timed out: Continue applies FailMode, AllowPass / ForceBlock decide here
-    .OnGuardError((ctx, guardName, ex) => ValueTask.FromResult(FailDecision.Continue))));
+    .OnGuardError((ctx, guardName, ex) => ValueTask.FromResult(FailDecision.Continue)))
+    .Build();
 ```
 
 For the escalation hooks (`OnBeforeEscalationAsync`, `OnEscalationTimeoutAsync`) implement `IFluxGuardHooks`, or
@@ -361,6 +414,9 @@ derive from `FluxGuardHooks` and override what you need, and pass it to `WithHoo
 ### Fail Mode
 
 ```csharp
+using FluxGuard.Core;
+using FluxGuard.Extensions;
+
 services.AddFluxGuard(opt =>
 {
     // What a guard that throws or times out means
@@ -384,18 +440,22 @@ Choosing `Strict` states "security over availability", so the fail mode follows 
 An explicit assignment always wins, in either direction and whatever order it is set in:
 
 ```csharp
+using FluxGuard;
+using FluxGuard.Core;
+
 // Strict, but keep availability first
-FluxGuard.Create(b => b.WithPreset(GuardPreset.Strict).WithFailMode(FailMode.Open));
+var guard = FluxGuardBuilder.Create().WithPreset(GuardPreset.Strict).WithFailMode(FailMode.Open).Build();
 ```
 
 > **Security note — outside `Strict`, the default is fail-open.** With `FailMode.Open`, a guard
-> that throws (e.g. a regex match timeout on a very long input) is logged as a warning and
+> that throws or exceeds `GuardTimeoutMs` is logged as a warning and
 > skipped: that request passes **without that guard's verdict**. This is the right default for
 > observe-only deployments, but once you *enforce* guard verdicts (blocking requests on
 > detection), use `Strict` or set `FailMode.Closed` — otherwise an input engineered to make one
 > guard fail silently bypasses it. Guard regexes carry a 1s match timeout as a hard upper bound;
 > every bundled pattern is backtracking-safe, so hitting it indicates extreme input size or
-> severe host contention.
+> severe host contention. A pattern that hits it does not make the guard throw: it counts as a
+> medium-severity match with confidence 0.5, which the guard judges like any other match.
 
 ## Internationalization
 
@@ -409,11 +469,16 @@ patterns (email, credit card, API keys, ...) are always on.
 | `ja` | Japanese (My Number, phone, ...) |
 
 ```csharp
-var guard = FluxGuard.Create(builder => builder
-    .ConfigureInputGuards(o => o.SupportedLanguages = ["ko", "en"]));   // default: every code
+using FluxGuard;
+
+var guard = FluxGuardBuilder.Create()
+    .ConfigureInputGuards(o => o.SupportedLanguages = ["ko", "en"])   // default: ten codes, see below
+    .Build();
 ```
 
-The other guards are not filtered by this list.
+The default list holds ten codes (`en`, `ko`, `ja`, `zh`, `es`, `fr`, `de`, `pt`, `ru`, `ar`), but only the three above
+have a pattern set; the other seven select nothing. The list applies to both PII guards, input and output, in every
+preset. The other guards are not filtered by it.
 
 ## Custom Guards
 
@@ -421,6 +486,15 @@ A custom rule is a guard: implement `IInputGuard` (or `IOutputGuard`) and add it
 preset when you also name one.
 
 ```csharp
+using FluxGuard;
+using FluxGuard.Abstractions;
+using FluxGuard.Core;
+
+var guard = FluxGuardBuilder.Create()
+    .WithPreset(GuardPreset.Standard)
+    .AddInputGuard(new CompetitorGuard())
+    .Build();
+
 public sealed class CompetitorGuard : IInputGuard
 {
     public string Name => "Competitor";
@@ -433,10 +507,6 @@ public sealed class CompetitorGuard : IInputGuard
             ? new GuardCheckResult { GuardName = Name, Passed = false, Score = 0.9, Severity = Severity.High, Details = "competitor mention" }
             : GuardCheckResult.Safe);
 }
-
-var guard = FluxGuard.Create(builder => builder
-    .WithPreset(GuardPreset.Standard)
-    .AddInputGuard(new CompetitorGuard()));
 ```
 
 ## Logging & Statistics
@@ -447,8 +517,11 @@ Logging goes through the `ILoggerFactory` you pass (`WithLogging(loggerFactory)`
 Statistics are recorded when you hand the pipeline a collector. Without one, nothing is recorded.
 
 ```csharp
+using FluxGuard;
+using FluxGuard.Monitoring;
+
 var stats = new InMemoryStatsCollector();          // or FluxGuardMetrics: System.Diagnostics.Metrics, meter "FluxGuard"
-var guard = FluxGuard.Create(builder => builder.WithStats(stats));
+var guard = FluxGuardBuilder.Create().WithStats(stats).Build();
 
 var snapshot = stats.GetStats();
 Console.WriteLine($"Total: {snapshot.TotalChecks}, blocked: {snapshot.BlockedCount} ({snapshot.BlockRate:P1})");
