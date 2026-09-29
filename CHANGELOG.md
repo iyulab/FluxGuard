@@ -14,6 +14,11 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   and the judge never ran. `AddFluxGuardRemote` now turns escalation on and sets `EscalationTimeoutMs` from
   `RemoteGuardOptions.TimeoutMs`, as the builder does. Checks the local guards escalate now make a model call.
 
+- **The minimal preset follows the guard switches and the PII language list.** It built its three guards
+  unconditionally, so `EnablePromptInjection`, `EnableJailbreak` and `EnablePIILeakage` set to `false` left the guard
+  running, and its output PII guard ignored `SupportedLanguages` and loaded every pattern set. The standard and strict
+  presets honoured all four; the minimal one now does too, on the builder and through `AddFluxGuard`.
+
 ## 0.17.0
 
 ### Fixed

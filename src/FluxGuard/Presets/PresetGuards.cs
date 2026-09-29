@@ -14,7 +14,7 @@ internal static class PresetGuards
     public static IEnumerable<IInputGuard> InputGuards(
         GuardPreset preset, IPatternRegistry registry, FluxGuardOptions options) => preset switch
     {
-        GuardPreset.Minimal => MinimalPreset.GetInputGuards(registry),
+        GuardPreset.Minimal => MinimalPreset.GetInputGuards(registry, options.InputGuards),
         GuardPreset.Standard => StandardPreset.GetInputGuards(registry, options.InputGuards),
         GuardPreset.Strict => StrictPreset.GetInputGuards(registry, options.InputGuards),
         _ => throw new ArgumentOutOfRangeException(nameof(preset), preset, "Unknown guard preset")
@@ -23,7 +23,8 @@ internal static class PresetGuards
     public static IEnumerable<IOutputGuard> OutputGuards(
         GuardPreset preset, IPatternRegistry registry, FluxGuardOptions options) => preset switch
     {
-        GuardPreset.Minimal => MinimalPreset.GetOutputGuards(registry),
+        GuardPreset.Minimal => MinimalPreset.GetOutputGuards(
+            registry, options.OutputGuards, options.InputGuards.SupportedLanguages),
         GuardPreset.Standard => StandardPreset.GetOutputGuards(
             registry, options.OutputGuards, options.InputGuards.SupportedLanguages),
         GuardPreset.Strict => StrictPreset.GetOutputGuards(
