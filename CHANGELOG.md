@@ -4,6 +4,12 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.18.1 - Unreleased
+
+### Changed
+
+- **Documentation comments describe behaviour only.** Comments no longer refer to internal tracking or planning records.
+
 ## 0.18.0 - 2026-09-30
 
 ### Changed

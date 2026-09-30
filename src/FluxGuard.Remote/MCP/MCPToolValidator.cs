@@ -25,7 +25,7 @@ public sealed partial class MCPToolValidator : IMCPGuardrail
     /// <see cref="MCPValidationResult.Valid"/> without establishing or checking a baseline — no
     /// behavior change for existing consumers. When <see langword="true"/>, the first call for a
     /// given server captures its tools' description/schema hashes as the trust baseline, and every
-    /// later call for that server is compared against it (BD-20260828-01).</param>
+    /// later call for that server is compared against it.</param>
     public MCPToolValidator(bool enableToolDescriptionIntegrityCheck = false)
     {
         _enableToolDescriptionIntegrityCheck = enableToolDescriptionIntegrityCheck;

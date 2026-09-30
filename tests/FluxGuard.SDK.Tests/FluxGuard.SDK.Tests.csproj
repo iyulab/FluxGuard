@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- xUnit v3 test projects are stand-alone executables (BD-20260829-xunit-v3-pilot) -->
+    <!-- xUnit v3 test projects are stand-alone executables -->
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>

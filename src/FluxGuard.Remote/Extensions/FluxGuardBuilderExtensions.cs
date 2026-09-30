@@ -294,7 +294,7 @@ public static class ServiceCollectionExtensions
     /// <param name="services">Service collection</param>
     /// <param name="enableToolDescriptionIntegrityCheck">Opt-in, off by default: when
     /// <see langword="true"/>, also enables <see cref="IMCPGuardrail.ValidateToolDescriptionsAsync"/>
-    /// baseline+drift detection (BD-20260828-01) — a further-nested opt-in for consumers that call
+    /// baseline+drift detection — a further-nested opt-in for consumers that call
     /// that method on every <c>tools/list</c> refresh and want tool description/schema poisoning
     /// caught.</param>
     /// <returns>Service collection</returns>

@@ -5,10 +5,8 @@ using Xunit;
 namespace FluxGuard.Remote.Tests.MCP;
 
 /// <summary>
-/// Unit coverage for <see cref="MCPToolValidator"/>. Previously untested despite being the
-/// concrete implementation of <see cref="IMCPGuardrail"/> — see docket BD-20260827-01, cycle-333
-/// (surfaced when the interface finally gained a consumer in <c>ironhive-agent</c>) and
-/// cycle-336 (this file).
+/// Unit coverage for <see cref="MCPToolValidator"/>, the concrete implementation of
+/// <see cref="IMCPGuardrail"/>.
 /// </summary>
 public class MCPToolValidatorTests
 {
@@ -167,7 +165,7 @@ public class MCPToolValidatorTests
         _validator.GetRegisteredServers().Should().BeEmpty();
     }
 
-    // ----- ValidateToolDescriptionsAsync (BD-20260828-01) -----
+    // ----- ValidateToolDescriptionsAsync -----
 
     private static IReadOnlyList<MCPToolDescriptor> OneTool(string description = "Reads a file from disk.") =>
         [new MCPToolDescriptor { Name = "read_file", Description = description }];

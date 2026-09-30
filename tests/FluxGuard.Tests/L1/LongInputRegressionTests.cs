@@ -7,9 +7,9 @@ namespace FluxGuard.Tests.L1;
 
 /// <summary>
 /// Regression: guard regexes must complete on very long inputs without a
-/// RegexMatchTimeoutException. Observed in the field (AIMS, 2026-07-07): L1RefusalGuard hit its
-/// former 100 ms wall-clock match timeout on a normal-length RAG answer under host load —
-/// with FailMode.Open that silently skips the guard's verdict. Every bundled pattern is
+/// RegexMatchTimeoutException. Under host load, L1RefusalGuard could hit its former 100 ms
+/// wall-clock match timeout on a normal-length RAG answer — with FailMode.Open that silently
+/// skips the guard's verdict. Every bundled pattern is
 /// backtracking-safe (audited 2026-07-21; the one nested quantifier, IBAN, was rewritten),
 /// so with the raised 1 s budget long inputs must never trip the timeout.
 /// FailMode.Closed is used so any guard exception surfaces as a "Guard error" block reason —
