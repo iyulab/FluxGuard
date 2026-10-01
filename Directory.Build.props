@@ -9,7 +9,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
-    <Version>0.18.1</Version>
+    <Version>0.18.2</Version>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -31,6 +31,7 @@
 
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)LICENSE" Pack="true" PackagePath="\" Visible="false" Condition="Exists('$(MSBuildThisFileDirectory)LICENSE')" />
   </ItemGroup>
   <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)../../local-packages')">
     <RestoreAdditionalProjectSources>

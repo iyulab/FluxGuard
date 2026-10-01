@@ -4,6 +4,13 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.18.2 - Unreleased
+
+### Fixed
+
+- **Packages now carry the license text.** Each `.nupkg` includes `LICENSE` next to the `MIT` expression,
+  so an application that ships third-party notices can copy the copyright line from the package.
+
 ## 0.18.1 - 2026-09-30
 
 ### Changed
