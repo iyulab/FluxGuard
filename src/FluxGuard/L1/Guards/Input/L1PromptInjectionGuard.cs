@@ -73,7 +73,7 @@ public sealed class L1PromptInjectionGuard : IInputGuard
                 details: $"High-confidence prompt injection: {match.PatternName}"));
         }
 
-        // Medium-high confidence -> escalate to L2/L3
+        // Medium-high confidence -> escalate to L3
         if (match.Confidence >= _escalationThreshold)
         {
             return ValueTask.FromResult(GuardCheckResult.Escalate(

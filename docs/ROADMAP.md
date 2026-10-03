@@ -2,10 +2,13 @@
 
 > **Secure by Default** — Protection starts immediately upon installation, maximum security with minimal configuration
 
+> The L2 (local ML) layer was removed in 0.19.0: its guards could not produce meaningful scores with the models they
+> were built for. L2 rows below are the original design and are kept as history.
+
 ## Package Structure
 
 ```
-FluxGuard          → Core (L1 + L2), base package
+FluxGuard          → Core (L1), base package
 FluxGuard.Remote   → L3 extension, references FluxGuard
 FluxGuard.SDK      → Framework integrations (ASP.NET Core, MEAI)
 ```
@@ -98,7 +101,7 @@ dotnet add package FluxGuard.SDK     # For framework integrations
 - [x] CI/CD pipeline (GitHub Actions)
 - [x] Core abstractions (`IFluxGuard`, `GuardResult`, etc.)
 - [x] L1 Regex guards (PromptInjection, Jailbreak, Encoding, PII)
-- [x] L2 ONNX ML guards (PromptInjection, Toxicity)
+- [x] L2 ONNX ML guards (PromptInjection, Toxicity) — removed in 0.19.0
 - [x] Hook system (`OnBeforeCheck`, `OnAfterCheck`, etc.)
 - [x] Builder API and DI integration
 

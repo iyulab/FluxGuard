@@ -4,6 +4,31 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.19.0 - Unreleased
+
+### Removed
+
+- **Breaking: the L2 (local ML) guards are removed** — `FluxGuardBuilder.AddL2Guards`, `L2GuardOptions`,
+  `L2PromptInjectionGuard`, `L2ToxicityGuard`, `OnnxSessionManager`, `SessionOptionsFactory`, `ModelLoader`,
+  `TokenizerWrapper`, `ModelInfo` and `InferenceResult`. They could not produce meaningful scores with the models they
+  were built for (a whole-word `vocab.txt` lookup in front of a SentencePiece and a byte-level BPE model), so a check
+  that ran them returned a "safe" verdict that meant nothing. No preset ever registered them.
+  Migration: remove the `AddL2Guards(...)` call; the L1 guards (every preset) and the L3 remote judge
+  (`FluxGuard.Remote`) are unchanged.
+- **The `FluxGuard` package no longer depends on `Microsoft.ML.OnnxRuntime` or `Microsoft.ML.Tokenizers`.** An
+  application that installs FluxGuard (directly or through `FluxGuard.Remote`) no longer carries the ONNX Runtime
+  native libraries.
+
+### Changed
+
+- **`IRemoteGuard`'s result parameter is named `localResult`** (was `l2Result`): it is the result of the local guards
+  that escalated the check. Only a caller that passes it by name changes. The L3 judge's prompt now says
+  "Local guards triggered" instead of "L2 guards triggered".
+
+### Dependencies
+
+- `Microsoft.Extensions.AI` 10.6.0 → 10.9.0 (`FluxGuard.SDK`).
+
 ## 0.18.2 - 2026-10-02
 
 ### Fixed

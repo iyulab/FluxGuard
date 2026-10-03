@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>FluxGuard</PackageId>
-    <Description>LLM Guardrails library for .NET - Secure by Default. Includes L1 (Regex) and L2 (ONNX ML) protection layers.</Description>
+    <Description>LLM Guardrails library for .NET - Secure by Default. Local L1 (pattern) guards; the L3 remote judge is in FluxGuard.Remote.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,8 +11,6 @@
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
-    <PackageReference Include="Microsoft.ML.Tokenizers" />
   </ItemGroup>
 
   <ItemGroup>

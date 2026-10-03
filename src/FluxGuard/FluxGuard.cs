@@ -424,14 +424,14 @@ internal sealed partial class FluxGuardCore : IFluxGuard
 
     private async Task<GuardResult> ExecuteInputEscalationAsync(
         GuardContext context,
-        GuardResult l2Result,
+        GuardResult localResult,
         Stopwatch stopwatch)
     {
         // Before escalation hook
-        if (!await _hooks.OnBeforeEscalationAsync(context, l2Result))
+        if (!await _hooks.OnBeforeEscalationAsync(context, localResult))
         {
             LogEscalationSkippedByHook(_logger, context.RequestId);
-            return l2Result;
+            return localResult;
         }
 
         LogEscalationStarted(_logger, context.RequestId, _remoteGuards.Count);
@@ -441,26 +441,26 @@ internal sealed partial class FluxGuardCore : IFluxGuard
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
             cts.CancelAfter(_options.EscalationTimeoutMs);
 
-            return await ExecuteRemoteInputGuardsAsync(context, l2Result, stopwatch, cts.Token);
+            return await ExecuteRemoteInputGuardsAsync(context, localResult, stopwatch, cts.Token);
         }
         catch (OperationCanceledException) when (!context.CancellationToken.IsCancellationRequested)
         {
             // Escalation timeout (not user cancellation)
             LogEscalationTimeout(_logger, context.RequestId, _options.EscalationTimeoutMs);
-            return await _hooks.OnEscalationTimeoutAsync(context, l2Result);
+            return await _hooks.OnEscalationTimeoutAsync(context, localResult);
         }
     }
 
     private async Task<GuardResult> ExecuteOutputEscalationAsync(
         GuardContext context,
         string output,
-        GuardResult l2Result,
+        GuardResult localResult,
         Stopwatch stopwatch)
     {
-        if (!await _hooks.OnBeforeEscalationAsync(context, l2Result))
+        if (!await _hooks.OnBeforeEscalationAsync(context, localResult))
         {
             LogEscalationSkippedByHook(_logger, context.RequestId);
-            return l2Result;
+            return localResult;
         }
 
         LogEscalationStarted(_logger, context.RequestId, _remoteGuards.Count);
@@ -470,31 +470,31 @@ internal sealed partial class FluxGuardCore : IFluxGuard
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
             cts.CancelAfter(_options.EscalationTimeoutMs);
 
-            return await ExecuteRemoteOutputGuardsAsync(context, output, l2Result, stopwatch, cts.Token);
+            return await ExecuteRemoteOutputGuardsAsync(context, output, localResult, stopwatch, cts.Token);
         }
         catch (OperationCanceledException) when (!context.CancellationToken.IsCancellationRequested)
         {
             LogEscalationTimeout(_logger, context.RequestId, _options.EscalationTimeoutMs);
-            return await _hooks.OnEscalationTimeoutAsync(context, l2Result);
+            return await _hooks.OnEscalationTimeoutAsync(context, localResult);
         }
     }
 
     private async Task<GuardResult> ExecuteRemoteInputGuardsAsync(
         GuardContext context,
-        GuardResult l2Result,
+        GuardResult localResult,
         Stopwatch stopwatch,
         CancellationToken cancellationToken)
     {
-        var l3TriggeredGuards = new List<TriggeredGuard>(l2Result.TriggeredGuards);
-        var maxScore = l2Result.Score;
-        var maxSeverity = l2Result.MaxSeverity;
+        var l3TriggeredGuards = new List<TriggeredGuard>(localResult.TriggeredGuards);
+        var maxScore = localResult.Score;
+        var maxSeverity = localResult.MaxSeverity;
         string? blockReason = null;
 
         foreach (var guard in _remoteGuards)
         {
             try
             {
-                var result = await guard.CheckInputAsync(context, l2Result, cancellationToken);
+                var result = await guard.CheckInputAsync(context, localResult, cancellationToken);
 
                 l3TriggeredGuards.Add(new TriggeredGuard
                 {
@@ -540,20 +540,20 @@ internal sealed partial class FluxGuardCore : IFluxGuard
     private async Task<GuardResult> ExecuteRemoteOutputGuardsAsync(
         GuardContext context,
         string output,
-        GuardResult l2Result,
+        GuardResult localResult,
         Stopwatch stopwatch,
         CancellationToken cancellationToken)
     {
-        var l3TriggeredGuards = new List<TriggeredGuard>(l2Result.TriggeredGuards);
-        var maxScore = l2Result.Score;
-        var maxSeverity = l2Result.MaxSeverity;
+        var l3TriggeredGuards = new List<TriggeredGuard>(localResult.TriggeredGuards);
+        var maxScore = localResult.Score;
+        var maxSeverity = localResult.MaxSeverity;
         string? blockReason = null;
 
         foreach (var guard in _remoteGuards)
         {
             try
             {
-                var result = await guard.CheckOutputAsync(context, output, l2Result, cancellationToken);
+                var result = await guard.CheckOutputAsync(context, output, localResult, cancellationToken);
 
                 l3TriggeredGuards.Add(new TriggeredGuard
                 {

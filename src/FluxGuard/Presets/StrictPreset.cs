@@ -8,8 +8,7 @@ namespace FluxGuard.Presets;
 
 /// <summary>
 /// Strict preset configuration
-/// L1 (Regex) + L2 (ML) + enhanced thresholds
-/// L1 only, with the strictest thresholds. No preset registers L2 - see <c>AddL2Guards</c>.
+/// L1 guards with the strictest thresholds.
 /// </summary>
 public static class StrictPreset
 {

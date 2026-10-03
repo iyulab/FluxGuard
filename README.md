@@ -88,7 +88,7 @@ async Task<string?> ReplyAsync(string userMessage)
 - Refusal detection on output ✅
 - Input / output length limits (`MaxInputLength`, `MaxOutputLength`; 128,000 characters by default) ✅
 
-Not part of any preset: the L2 (local ML) guards and L3 (remote) guards are added explicitly — see
+Not part of any preset: the L3 (remote) guards are added explicitly — see
 [Guard Layers](#guard-layers).
 
 ## Architecture
@@ -98,10 +98,10 @@ Not part of any preset: the L2 (local ML) guards and L3 (remote) guards are adde
 │                      FluxGuard (Core)                       │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  INPUT ──▶ [L1: Regex] ──▶ [L2: Local ML] ──▶ DECISION     │
-│             <1ms            5-20ms                          │
+│  INPUT ──▶ [L1: Regex] ──▶ DECISION                         │
+│             <1ms                                            │
 │                                                             │
-│  OUTPUT ◀── [L1: Regex] ◀── [L2: Local ML] ◀── LLM        │
+│  OUTPUT ◀── [L1: Regex] ◀── LLM                            │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -119,7 +119,6 @@ Not part of any preset: the L2 (local ML) guards and L3 (remote) guards are adde
 | Layer | Location | Latency | Default |
 |-------|----------|---------|---------|
 | **L1** | Local | <1ms | ✅ ON (presets register these) |
-| **L2** | Local | not measured | ❌ OFF — **not usable yet** (see [L2 status](#l2-status)). No preset registers them; `builder.AddL2Guards(sessionManager)` adds them on top of the preset |
 | **L3** | Remote | 50-200ms | ❌ OFF (opt-in) |
 
 ## Guards
@@ -132,7 +131,6 @@ Not part of any preset: the L2 (local ML) guards and L3 (remote) guards are adde
 | `Jailbreak` | DAN, AIM persona attack blocking | L1 | ✅ `EnableJailbreak` |
 | `EncodingBypass` | Base64, Unicode bypass detection | L1 | ✅ `EnableEncodingBypass` |
 | `PIIExposure` | PII detection in input | L1 | ✅ `EnablePIIExposure` |
-| `L2.PromptInjection` | ML prompt-injection classifier | L2 | ❌ `AddL2Guards(...)` |
 
 ### Output Guards
 
@@ -140,7 +138,6 @@ Not part of any preset: the L2 (local ML) guards and L3 (remote) guards are adde
 |-------|-------------|-------|---------------|
 | `PIILeakage` | PII detection in the response (detects and blocks; it does not rewrite the response) | L1 | ✅ `EnablePIILeakage` |
 | `Refusal` | Model refusal response detection | L1 | ✅ `EnableRefusal` |
-| `L2.Toxicity` | ML toxicity classifier | L2 | ❌ `AddL2Guards(...)` |
 
 Every guard is bounded by `GuardTimeoutMs` (5000 by default). A guard that throws or times out is a guard error:
 skipped under `FailMode.Open`, blocking under `FailMode.Closed`.
@@ -424,7 +421,7 @@ services.AddFluxGuard(opt =>
 });
 ```
 
-This holds for every guard, the L2 and L3 guards included: a guard that cannot run reports an error and the fail
+This holds for every guard, the L3 guards included: a guard that cannot run reports an error and the fail
 mode decides. For per-error control use the `OnGuardError` hook above.
 
 **When you don't set `FailMode`, it is derived from the preset** (since 0.12.0):
@@ -561,30 +558,16 @@ type's property names.
 No benchmark ships with this repository, so this README states no latency or throughput figures.
 The numbers that used to sit here were design targets from [docs/ROADMAP.md](docs/ROADMAP.md), and
 they were never measured. What is true of the shape: the L1 guards are regex and string work in
-process, L2 runs an ONNX model per check, and L3 makes a network call to a model provider — so the
-three layers differ by orders of magnitude, and only L1 is in every preset.
+process, and L3 makes a network call to a model provider — so the two layers differ by orders of
+magnitude, and only L1 is in every preset.
 
 ## Packages
 
 | Package | Description | Dependencies |
 |---------|-------------|--------------|
-| `FluxGuard` | L1 guardrails (all presets) and the L2 ONNX guards (opt-in via `AddL2Guards`) | ONNX Runtime |
+| `FluxGuard` | L1 guardrails (all presets) | Microsoft.Extensions abstractions only |
 | `FluxGuard.Remote` | Remote analysis (L3) | FluxGuard, HTTP |
 | `FluxGuard.SDK` | Framework integrations | FluxGuard, ASP.NET Core, MEAI |
-
-The L2 guards live in the `FluxGuard` package but **no preset registers them** — they need model
-files on disk, so they are an explicit `builder.AddL2Guards(sessionManager)` call.
-
-### L2 status
-
-The L2 guards cannot produce meaningful scores with the models they are built for:
-
-- They read a `vocab.txt` and look each whole lowercased word up in it, with no sub-word splitting.
-- The prompt-injection model they name (DeBERTa-v3) uses a SentencePiece tokenizer (`spm.model`) and ships no `vocab.txt`.
-- The toxicity model they name (Detoxify unbiased, RoBERTa) uses a byte-level BPE tokenizer (`vocab.json` + `merges.txt`) and is not published as ONNX.
-
-Use the L1 guards, or the L3 remote judge, until this is resolved.
-
 
 ## License
 

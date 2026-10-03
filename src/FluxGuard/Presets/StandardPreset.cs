@@ -8,8 +8,7 @@ namespace FluxGuard.Presets;
 
 /// <summary>
 /// Standard preset configuration
-/// L1 (Regex) + L2 (ML) guards enabled
-/// L1 only, with the fuller guard set. No preset registers L2 - see <c>AddL2Guards</c>.
+/// L1 guards, the fuller set.
 /// </summary>
 public static class StandardPreset
 {

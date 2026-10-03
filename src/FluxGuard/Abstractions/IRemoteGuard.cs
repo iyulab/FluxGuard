@@ -32,12 +32,12 @@ public interface IRemoteGuard
     /// Perform remote input check
     /// </summary>
     /// <param name="context">Check context</param>
-    /// <param name="l2Result">L2 guard result to evaluate</param>
+    /// <param name="localResult">Result of the local guards that escalated this check</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Remote guard result</returns>
     ValueTask<RemoteGuardResult> CheckInputAsync(
         GuardContext context,
-        GuardResult l2Result,
+        GuardResult localResult,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -45,13 +45,13 @@ public interface IRemoteGuard
     /// </summary>
     /// <param name="context">Check context</param>
     /// <param name="output">LLM output text</param>
-    /// <param name="l2Result">L2 guard result to evaluate</param>
+    /// <param name="localResult">Result of the local guards that escalated this check</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Remote guard result</returns>
     ValueTask<RemoteGuardResult> CheckOutputAsync(
         GuardContext context,
         string output,
-        GuardResult l2Result,
+        GuardResult localResult,
         CancellationToken cancellationToken = default);
 }
 

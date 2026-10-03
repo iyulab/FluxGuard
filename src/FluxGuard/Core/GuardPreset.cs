@@ -12,14 +12,14 @@ public enum GuardPreset
     Minimal,
 
     /// <summary>
-    /// Standard configuration - L1 + L2 enabled (default)
-    /// L1 only, with the fuller guard set. No preset registers L2 - see <c>AddL2Guards</c>.
+    /// Standard configuration (default)
+    /// L1 guards, the fuller set.
     /// </summary>
     Standard,
 
     /// <summary>
-    /// Strict configuration - L1 + L2 + enhanced thresholds
-    /// L1 only, with the strictest thresholds. No preset registers L2 - see <c>AddL2Guards</c>.
+    /// Strict configuration
+    /// L1 guards with the strictest thresholds.
     /// <para>
     /// Selecting this preset also makes a guard error <b>block</b> the request
     /// (fail-closed) unless <c>FailMode</c> is set explicitly.

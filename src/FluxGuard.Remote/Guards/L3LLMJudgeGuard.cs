@@ -56,7 +56,7 @@ public sealed partial class L3LLMJudgeGuard : IRemoteGuard
     /// <inheritdoc />
     public async ValueTask<RemoteGuardResult> CheckInputAsync(
         GuardContext context,
-        GuardResult l2Result,
+        GuardResult localResult,
         CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -70,8 +70,8 @@ public sealed partial class L3LLMJudgeGuard : IRemoteGuard
         }
 
         // Build context for judge
-        var judgeContext = l2Result.TriggeredGuards.Count > 0
-            ? $"L2 guards triggered: {string.Join(", ", l2Result.TriggeredGuards.Select(g => g.GuardName))}"
+        var judgeContext = localResult.TriggeredGuards.Count > 0
+            ? $"Local guards triggered: {string.Join(", ", localResult.TriggeredGuards.Select(g => g.GuardName))}"
             : null;
 
         var request = new CompletionRequest
@@ -109,7 +109,7 @@ public sealed partial class L3LLMJudgeGuard : IRemoteGuard
     public async ValueTask<RemoteGuardResult> CheckOutputAsync(
         GuardContext context,
         string output,
-        GuardResult l2Result,
+        GuardResult localResult,
         CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
