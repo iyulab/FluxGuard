@@ -119,7 +119,7 @@ Not part of any preset: the L2 (local ML) guards and L3 (remote) guards are adde
 | Layer | Location | Latency | Default |
 |-------|----------|---------|---------|
 | **L1** | Local | <1ms | ✅ ON (presets register these) |
-| **L2** | Local | 5-20ms | ❌ OFF — no preset registers them; `builder.AddL2Guards(sessionManager)` adds them on top of the preset. They need an `OnnxSessionManager` and the model files, and the call throws if a file is missing |
+| **L2** | Local | not measured | ❌ OFF — **not usable yet** (see [L2 status](#l2-status)). No preset registers them; `builder.AddL2Guards(sessionManager)` adds them on top of the preset |
 | **L3** | Remote | 50-200ms | ❌ OFF (opt-in) |
 
 ## Guards
@@ -574,6 +574,17 @@ three layers differ by orders of magnitude, and only L1 is in every preset.
 
 The L2 guards live in the `FluxGuard` package but **no preset registers them** — they need model
 files on disk, so they are an explicit `builder.AddL2Guards(sessionManager)` call.
+
+### L2 status
+
+The L2 guards cannot produce meaningful scores with the models they are built for:
+
+- They read a `vocab.txt` and look each whole lowercased word up in it, with no sub-word splitting.
+- The prompt-injection model they name (DeBERTa-v3) uses a SentencePiece tokenizer (`spm.model`) and ships no `vocab.txt`.
+- The toxicity model they name (Detoxify unbiased, RoBERTa) uses a byte-level BPE tokenizer (`vocab.json` + `merges.txt`) and is not published as ONNX.
+
+Use the L1 guards, or the L3 remote judge, until this is resolved.
+
 
 ## License
 
