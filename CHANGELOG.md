@@ -4,6 +4,11 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.19.1 - Unreleased
+
+### Dependencies
+- Microsoft.Extensions.AI 10.10.0.
+
 ## 0.19.0 - 2026-10-03
 
 ### Removed
