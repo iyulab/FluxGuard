@@ -4,6 +4,13 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.20.0 - Unreleased
+
+### Changed
+- **Breaking:** `IAgentGrantManager.CheckPermissionAsync` takes a `CancellationToken` (optional, last), and
+  `ToolInvocationGuard` passes the guard context's token to it. An implementation of the interface adds the
+  parameter; callers are unaffected.
+
 ## 0.19.1 - 2026-10-05
 
 ### Dependencies

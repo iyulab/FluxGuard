@@ -17,6 +17,8 @@ public class PublicApiConventionTests
 {
     private static readonly string[] KnownUncancellable =
     [
+        // The token travels in GuardContext.CancellationToken (set by the caller; the string overloads of
+        // CheckInputAsync/CheckOutputAsync take one and put it there), the way HttpContext carries RequestAborted.
         "FluxGuard.Abstractions.IInputGuard.CheckAsync(GuardContext)",
         "FluxGuard.Abstractions.IOutputGuard.CheckAsync(GuardContext, String)",
         "FluxGuard.Hooks.IFluxGuardHooks.OnAfterCheckAsync(GuardContext, GuardResult)",
@@ -30,7 +32,7 @@ public class PublicApiConventionTests
         "FluxGuard.Hooks.IFluxGuardHooks.OnPassedAsync(GuardContext, GuardResult)",
         "FluxGuard.IFluxGuard.CheckInputAsync(GuardContext)",
         "FluxGuard.IFluxGuard.CheckOutputAsync(GuardContext, String)",
-        "FluxGuard.Remote.Agent.IAgentGrantManager.CheckPermissionAsync(AgentSession, String, String)",
+        // ASP.NET Core middleware shape: the request's token is HttpContext.RequestAborted.
         "FluxGuard.SDK.AspNetCore.Middleware.FluxGuardMiddleware.InvokeAsync(HttpContext)",
     ];
 

@@ -97,7 +97,7 @@ public sealed partial class ToolInvocationGuard : IInputGuard
 
         // Check permissions
         var resource = ExtractResource(context);
-        var permission = await _permissionManager.CheckPermissionAsync(session, toolName, resource);
+        var permission = await _permissionManager.CheckPermissionAsync(session, toolName, resource, context.CancellationToken);
 
         if (!permission.IsPermitted)
         {

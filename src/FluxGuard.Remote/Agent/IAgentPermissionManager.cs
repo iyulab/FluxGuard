@@ -12,11 +12,13 @@ public interface IAgentGrantManager
     /// <param name="session">Agent session</param>
     /// <param name="action">Action to check</param>
     /// <param name="resource">Target resource</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Permission check result</returns>
     Task<PermissionResult> CheckPermissionAsync(
         AgentSession session,
         string action,
-        string? resource = null);
+        string? resource = null,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Grant permission to a session
