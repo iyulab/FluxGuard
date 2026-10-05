@@ -55,6 +55,9 @@ jobs:
 
       - name: Upload coverage reports
         if: matrix.os == 'ubuntu-latest'
+        # Coverage upload is telemetry, not a gate: fail_ci_if_error does not cover a crash of the
+        # action itself (a TLS handshake failure exited non-zero and blocked the release's CI check).
+        continue-on-error: true
         uses: codecov/codecov-action@v4
         with:
           directory: ./coverage
