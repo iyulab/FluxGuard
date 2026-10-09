@@ -4,6 +4,14 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## Unreleased
+
+### Removed
+- **Breaking: the agent tool-permission types are removed** — `ToolInvocationGuard`, `IAgentGrantManager`, `AgentGrant`,
+  `PermissionResult`, `AgentSession` and `ToolCallRecord` (namespace `FluxGuard.Remote.Agent`). Nothing used them: no preset
+  or builder registered the guard, and the library shipped no `IAgentGrantManager` implementation for it to call.
+  Migration: check tool calls with your own `IInputGuard`, added with `FluxGuardBuilder.AddInputGuard`.
+
 ## 0.21.0 - 2026-10-06
 
 ### Removed

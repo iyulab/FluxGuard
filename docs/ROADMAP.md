@@ -136,8 +136,6 @@ dotnet add package FluxGuard.SDK     # For framework integrations
 - [x] In-memory stats collector
 
 ### Phase 9: Advanced Security ✅
-- [x] Agent permission management (`IAgentGrantManager`)
-- [x] Tool invocation guard
 - [x] MCP guardrails (`IMCPGuardrail`)
 - [x] MCP tool validator
 
