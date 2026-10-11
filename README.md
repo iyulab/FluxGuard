@@ -28,7 +28,7 @@ FluxGuard is a guardrail library designed to **accelerate secure LLM application
    - Completely override default policies
 
 4. **Local First**
-   - 95%+ requests processed locally in <20ms
+   - Every preset runs in process (regex and string checks); no request leaves the host
    - Works without external services
    - Remote is optional extension
 
@@ -36,6 +36,14 @@ FluxGuard is a guardrail library designed to **accelerate secure LLM application
    - Guard failures don't block requests (default)
    - Remote timeouts fall back to local results
    - All failure behaviors can be overridden
+
+## Packages
+
+| Package | Description | Dependencies |
+|---------|-------------|--------------|
+| `FluxGuard` | L1 guardrails: builder, presets, input/output guards, hooks, streaming guard, statistics, DI | Microsoft.Extensions abstractions only |
+| `FluxGuard.Remote` | L3 analysis: LLM judge, groundedness check, RAG document and MCP tool-call validation | FluxGuard, Microsoft.Extensions.Http |
+| `FluxGuard.SDK` | Framework integrations: ASP.NET Core middleware, `IChatClient` middleware | FluxGuard, ASP.NET Core, Microsoft.Extensions.AI |
 
 ## Installation
 
@@ -91,6 +99,28 @@ async Task<string?> ReplyAsync(string userMessage)
 Not part of any preset: the L3 (remote) guards are added explicitly — see
 [Guard Layers](#guard-layers).
 
+## Features
+
+| Feature | Entry point | How to turn it on |
+|---------|-------------|-------------------|
+| Input guards (prompt injection, jailbreak, encoding bypass, PII exposure) | `IFluxGuard.CheckInputAsync` | On in every preset (Minimal: prompt injection + jailbreak); switch each off with `ConfigureInputGuards(o => o.EnableXxx = false)` |
+| Output guards (PII leakage, refusal) | `IFluxGuard.CheckOutputAsync` | On by default (Minimal: PII leakage only); `ConfigureOutputGuards` |
+| Input normalization (Unicode, zero-width, homoglyphs) | `InputGuardOptions.EnableUnicodeNormalization` / `EnableZeroWidthFiltering` / `EnableHomoglyphDetection` | On by default |
+| Length limits | `InputGuardOptions.MaxInputLength`, `OutputGuardOptions.MaxOutputLength` | On (128,000 characters); `0` disables |
+| Presets | `FluxGuardBuilder.WithPreset(GuardPreset)`, `ApplyMinimalPreset()` / `ApplyStandardPreset()` / `ApplyStrictPreset()` | `Standard` when none is named |
+| Fail mode and guard timeout | `FluxGuardOptions.FailMode`, `GuardTimeoutMs`; `FluxGuardBuilder.WithFailMode` | Derived from the preset when unset; timeout 5000 ms |
+| Custom guards | `IInputGuard` / `IOutputGuard` + `FluxGuardBuilder.AddInputGuard` / `AddOutputGuard` | Opt-in |
+| Hooks | `FluxGuardBuilder.WithHooks(...)` (`LambdaHooksBuilder`, `IFluxGuardHooks`, `FluxGuardHooks`) | Opt-in |
+| Streaming output validation | `StreamingGuardOrchestrator.ValidateStreamAsync` with `IStreamingGuard`s (e.g. `L1StreamingPIIGuard`, which replaces PII with `[REDACTED]`) | Opt-in: construct it yourself; not part of the `IFluxGuard` pipeline |
+| Statistics / metrics | `FluxGuardBuilder.WithStats(IGuardStatsCollector)`; `InMemoryStatsCollector`, `FluxGuardMetrics` | Opt-in: nothing is recorded without a collector |
+| Dependency injection | `services.AddFluxGuard(...)` (options, `IConfiguration`) | Opt-in |
+| LLM judge (L3) | `FluxGuardBuilder.WithRemoteGuard(apiKey)` / `WithAzureRemoteGuard(endpoint, apiKey, deployment)`; `services.AddFluxGuardRemote(...)` | Opt-in (`FluxGuard.Remote`); asked only on escalation |
+| Groundedness check | `L3HallucinationGuard` via `AddOutputGuard` | Opt-in; checks only when `GroundingContextKey` metadata is present |
+| RAG document validation | `IndirectInjectionDetector` (`IRAGSecurityPipeline`); `services.AddFluxGuardRagSecurity()`; as a pipeline guard: `L3RAGSecurityGuard` via `AddInputGuard`, documents under `RAGDocumentsKey` metadata | Opt-in |
+| MCP tool-call validation | `MCPToolValidator` (`IMCPGuardrail`); `services.AddFluxGuardMcpGuardrail()` | Opt-in; description integrity is a further opt-in |
+| ASP.NET Core middleware | `services.AddFluxGuardMiddleware(...)` + `app.UseFluxGuard()` | Opt-in (`FluxGuard.SDK`) |
+| `IChatClient` middleware | `ChatClientBuilder.UseFluxGuard(...)` (`FluxGuardChatClient`) | Opt-in (`FluxGuard.SDK`); streamed output only with `ValidateStreamingOutput = true` |
+
 ## Architecture
 
 ```
@@ -99,7 +129,7 @@ Not part of any preset: the L3 (remote) guards are added explicitly — see
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  INPUT ──▶ [L1: Regex] ──▶ DECISION                         │
-│             <1ms                                            │
+│             in process                                      │
 │                                                             │
 │  OUTPUT ◀── [L1: Regex] ◀── LLM                            │
 │                                                             │
@@ -110,16 +140,16 @@ Not part of any preset: the L3 (remote) guards are added explicitly — see
 │                     FluxGuard.Remote                        │
 ├─────────────────────────────────────────────────────────────┤
 │  [L3: LLM Judge] ──▶ Semantic Analysis ──▶ Final Decision  │
-│       50-200ms          (on escalation)                     │
+│      network call       (on escalation)                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ## Guard Layers
 
-| Layer | Location | Latency | Default |
+| Layer | Location | Cost | Default |
 |-------|----------|---------|---------|
-| **L1** | Local | <1ms | ✅ ON (presets register these) |
-| **L3** | Remote | 50-200ms | ❌ OFF (opt-in) |
+| **L1** | Local | In-process regex/string work | ✅ ON (presets register these) |
+| **L3** | Remote | A model-provider call per escalation | ❌ OFF (opt-in) |
 
 ## Guards
 
@@ -560,14 +590,6 @@ The numbers that used to sit here were design targets from [docs/ROADMAP.md](doc
 they were never measured. What is true of the shape: the L1 guards are regex and string work in
 process, and L3 makes a network call to a model provider — so the two layers differ by orders of
 magnitude, and only L1 is in every preset.
-
-## Packages
-
-| Package | Description | Dependencies |
-|---------|-------------|--------------|
-| `FluxGuard` | L1 guardrails (all presets) | Microsoft.Extensions abstractions only |
-| `FluxGuard.Remote` | Remote analysis (L3) | FluxGuard, HTTP |
-| `FluxGuard.SDK` | Framework integrations | FluxGuard, ASP.NET Core, MEAI |
 
 ## License
 
