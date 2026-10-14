@@ -585,7 +585,8 @@ type's property names.
 
 ## Performance
 
-No benchmark ships with this repository, so this README states no latency or throughput figures.
+No benchmark ships with this repository, so this README states no latency or throughput figures. Which public
+benchmark measures detection quality, and where none exists, is in [docs/QUALITY-BENCHMARKS.md](docs/QUALITY-BENCHMARKS.md).
 The numbers that used to sit here were design targets from [docs/ROADMAP.md](docs/ROADMAP.md), and
 they were never measured. What is true of the shape: the L1 guards are regex and string work in
 process, and L3 makes a network call to a model provider — so the two layers differ by orders of

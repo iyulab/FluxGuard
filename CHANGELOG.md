@@ -6,6 +6,10 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
 
 ## Unreleased
 
+### Documentation
+- **`docs/QUALITY-BENCHMARKS.md` names the public benchmark for detection quality**: GuardBench's mixed safe/unsafe
+  sets (F1, AUPRC), and the areas — prompt injection, PII, topic restriction — where no established benchmark exists.
+
 ### Changed
 - **The packages from this repository depend on each other at exactly the same version** (`[x.y.z]`), not a floor.
   A consumer that moves one of them while a family member it depends on resolves at an older version now gets restore warning NU1608 naming
