@@ -107,7 +107,8 @@ public sealed record GuardLayerStats
     public required string GuardName { get; init; }
 
     /// <summary>
-    /// Guard layer (L1, L2, L3)
+    /// Layer label the statistics are grouped by: <c>"L1"</c> or <c>"L3"</c> for built-in guards, or the label a
+    /// custom guard reports.
     /// </summary>
     public required string Layer { get; init; }
 

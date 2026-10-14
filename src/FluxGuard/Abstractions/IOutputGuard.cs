@@ -13,7 +13,9 @@ public interface IOutputGuard
     string Name { get; }
 
     /// <summary>
-    /// Guard layer (L1, L2, L3)
+    /// Layer label reported in results, logs and statistics. Built-in guards report <c>"L1"</c> (in-process
+    /// pattern and string work) or <c>"L3"</c> (a call to a model provider); a custom guard may report any label.
+    /// There is no L2 since 0.19.0, when the local ML guards were removed.
     /// </summary>
     string Layer { get; }
 

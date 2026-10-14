@@ -7,6 +7,10 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
 ## Unreleased
 
 ### Documentation
+- **The docs no longer describe an L2 layer.** The `Layer` documentation on the guard interfaces, `TriggeredGuard` and
+  `GuardLayerStats` listed «L1, L2, L3» although the local ML guards were removed in 0.19.0; it now says built-in guards
+  report `L1` or `L3` and a custom guard reports its own label. The README «Guard Layers» section says L2 is gone and that
+  a model-based check is a custom guard added with `AddInputGuard` / `AddOutputGuard`.
 - **`docs/QUALITY-BENCHMARKS.md` names the public benchmark for detection quality**: GuardBench's mixed safe/unsafe
   sets (F1, AUPRC), and the areas — prompt injection, PII, topic restriction — where no established benchmark exists.
 

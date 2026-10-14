@@ -151,6 +151,11 @@ Not part of any preset: the L3 (remote) guards are added explicitly — see
 | **L1** | Local | In-process regex/string work | ✅ ON (presets register these) |
 | **L3** | Remote | A model-provider call per escalation | ❌ OFF (opt-in) |
 
+There is no L2. The local ML guards (`AddL2Guards`, ONNX prompt-injection and toxicity models) were removed in 0.19.0,
+and no preset had registered them. A model-based check — a local classifier, an embedding similarity test — is a
+custom guard: implement `IInputGuard` or `IOutputGuard` around your model, report the layer label you want in `Layer`,
+and add it with `AddInputGuard` / `AddOutputGuard` (see [Custom Guards](#custom-guards)).
+
 ## Guards
 
 ### Input Guards
