@@ -100,6 +100,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
             var triggeredGuards = new List<TriggeredGuard>();
             var maxSeverity = Severity.Info;
             var maxScore = 0.0;
+            var maxBlockingScore = 0.0;
             var needsEscalation = false;
             string? blockReason = null;
 
@@ -129,6 +130,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                         });
 
                         if (result.Score > maxScore) maxScore = result.Score;
+                        if (CountsTowardBlock(result) && result.Score > maxBlockingScore) maxBlockingScore = result.Score;
                         if (result.Severity > maxSeverity) maxSeverity = result.Severity;
                         if (result.NeedsEscalation) needsEscalation = true;
 
@@ -164,6 +166,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
             var guardResult = DetermineResult(
                 context.RequestId,
                 maxScore,
+                maxBlockingScore,
                 maxSeverity,
                 triggeredGuards,
                 needsEscalation,
@@ -267,6 +270,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
             var triggeredGuards = new List<TriggeredGuard>();
             var maxSeverity = Severity.Info;
             var maxScore = 0.0;
+            var maxBlockingScore = 0.0;
             var needsEscalation = false;
             string? blockReason = null;
 
@@ -296,6 +300,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                         });
 
                         if (result.Score > maxScore) maxScore = result.Score;
+                        if (CountsTowardBlock(result) && result.Score > maxBlockingScore) maxBlockingScore = result.Score;
                         if (result.Severity > maxSeverity) maxSeverity = result.Severity;
                         if (result.NeedsEscalation) needsEscalation = true;
 
@@ -329,6 +334,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
             var guardResult = DetermineResult(
                 context.RequestId,
                 maxScore,
+                maxBlockingScore,
                 maxSeverity,
                 triggeredGuards,
                 needsEscalation,
@@ -380,9 +386,19 @@ internal sealed partial class FluxGuardCore : IFluxGuard
         }
     }
 
+    /// <summary>
+    /// Whether a guard's score may reach <see cref="FluxGuardOptions.BlockThreshold"/>. A guard that refused the text
+    /// (<see cref="GuardCheckResult.Passed"/> false) or asked for a second opinion
+    /// (<see cref="GuardCheckResult.NeedsEscalation"/>) reports how risky the text is. A guard that passed it reports how
+    /// sure it is of what it found - an IP address matched at confidence 0.9 is not 0.9 risk - so its score can flag the
+    /// check but never block it.
+    /// </summary>
+    private static bool CountsTowardBlock(GuardCheckResult result) => !result.Passed || result.NeedsEscalation;
+
     private GuardResult DetermineResult(
         string requestId,
         double maxScore,
+        double maxBlockingScore,
         Severity maxSeverity,
         List<TriggeredGuard> triggeredGuards,
         bool needsEscalation,
@@ -396,8 +412,8 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 triggeredGuards, latencyMs);
         }
 
-        // Score-based decision
-        if (maxScore >= _options.BlockThreshold)
+        // Score-based decision: only a refusal or an escalation request blocks by score (CountsTowardBlock)
+        if (maxBlockingScore >= _options.BlockThreshold)
         {
             return GuardResult.Block(
                 requestId,
@@ -409,7 +425,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
         }
 
         if (needsEscalation && _options.EnableL3Escalation &&
-            maxScore >= _options.EscalationThreshold)
+            maxBlockingScore >= _options.EscalationThreshold)
         {
             return GuardResult.Escalate(requestId, maxScore, triggeredGuards, latencyMs);
         }
@@ -610,13 +626,9 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 triggeredGuards, latencyMs);
         }
 
-        if (maxScore >= _options.BlockThreshold)
-        {
-            return GuardResult.Block(requestId,
-                triggeredGuards.LastOrDefault()?.Details ?? "L3 threshold exceeded",
-                maxScore, maxSeverity, triggeredGuards, latencyMs);
-        }
-
+        // No score-based block here: escalation ran because the local blocking score stayed below BlockThreshold, and
+        // every remote guard that refused the text has already set blockReason. A remote guard that passed it decided
+        // the escalated suspicion; its score (and any flag-only local score) can flag the check, not block it.
         if (maxScore >= _options.FlagThreshold)
         {
             return GuardResult.Flag(requestId, maxScore, maxSeverity, triggeredGuards, latencyMs);

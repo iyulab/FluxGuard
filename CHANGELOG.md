@@ -4,6 +4,22 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## [Unreleased]
+
+### Fixed
+- **Breaking: a guard that passes a text no longer blocks it through `BlockThreshold`.** The core compared every guard's
+  score with the block threshold, but a guard that passes a text reports how sure it is of what it found, not how risky
+  the text is. So with the standard preset (threshold 0.9) the PII exposure guard's «tracked, not refused» matches
+  blocked the request: every IPv4 address and every four-part version number such as `5.0.5.6` (pattern confidence
+  0.9), every email address (0.95), and IBAN, JWT and MAC addresses. Now only a guard that refused the text or asked for
+  escalation blocks by score; a passed result can still flag the check (`GuardDecision.Flagged`). After an escalation,
+  a remote guard that passes the text decides it: its score, and any passed local score, flag and do not block.
+  Unchanged: credit cards, private keys, API keys and passwords in input still block; on output the PII leakage guard
+  still blocks High and Critical PII (IBAN, JWT, keys), and now flags email, IP and MAC addresses instead of blocking.
+  Migration: if you relied on an email or IP address in input (or email in output) being blocked, check
+  `GuardResult.Decision == GuardDecision.Flagged` and its `TriggeredGuards`, or raise the matching guard's own verdict
+  with a custom guard.
+
 ## 0.22.1 - 2026-10-15
 
 ### Fixed

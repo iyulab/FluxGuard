@@ -56,7 +56,9 @@ public sealed class FluxGuardOptions
     public bool EnableL3Escalation { get; set; }
 
     /// <summary>
-    /// Score at or above which a check blocks. When left unset, it is derived from <see cref="Preset"/>:
+    /// Score at or above which a check blocks. Only the score of a guard that refused the text or asked for escalation is
+    /// compared; a guard that passed the text can flag the check (<see cref="FlagThreshold"/>) but not block it. When left
+    /// unset, it is derived from <see cref="Preset"/>:
     /// 0.8 for <see cref="GuardPreset.Strict"/>, 0.9 otherwise. Assigning it always wins, whichever order it is set in.
     /// </summary>
     public double BlockThreshold

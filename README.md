@@ -165,13 +165,13 @@ and add it with `AddInputGuard` / `AddOutputGuard` (see [Custom Guards](#custom-
 | `PromptInjection` | Instruction override detection | L1 | ✅ `EnablePromptInjection` |
 | `Jailbreak` | DAN, AIM persona attack blocking | L1 | ✅ `EnableJailbreak` |
 | `EncodingBypass` | Base64, Unicode bypass detection | L1 | ✅ `EnableEncodingBypass` |
-| `PIIExposure` | PII detection in input | L1 | ✅ `EnablePIIExposure` |
+| `PIIExposure` | PII detection in input (blocks credit cards, keys and passwords; flags other PII such as email or IP addresses) | L1 | ✅ `EnablePIIExposure` |
 
 ### Output Guards
 
 | Guard | Description | Layer | On by default |
 |-------|-------------|-------|---------------|
-| `PIILeakage` | PII detection in the response (detects and blocks; it does not rewrite the response) | L1 | ✅ `EnablePIILeakage` |
+| `PIILeakage` | PII detection in the response (blocks High and Critical PII such as IBAN, JWT or keys; flags email, IP and MAC addresses; it does not rewrite the response) | L1 | ✅ `EnablePIILeakage` |
 | `Refusal` | Model refusal response detection | L1 | ✅ `EnableRefusal` |
 
 Every guard is bounded by `GuardTimeoutMs` (5000 by default). A guard that throws or times out is a guard error:
