@@ -80,8 +80,11 @@ public static partial class JapanesePIIPatterns
     }
 
     // My Number: 12 digits
+    // A label before the number (マイナンバー / 個人番号 / My Number / 마이넘버), and the check digit
+    // (PIIChecksums.IsMyNumber): about one random 12-digit number in eleven passes the check digit alone — a date-plus-
+    // sequence order number such as 202610160001 does.
     [GeneratedRegex(
-        @"\b\d{4}[-\s]?\d{4}[-\s]?\d{4}\b",
+        @"(?:マイナンバー|個人番号|(?i:\bmy\s*number\b)|마이넘버)[^\d\n]{0,20}\d{4}[-\s]?\d{4}[-\s]?\d{4}\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex MyNumberRegex();

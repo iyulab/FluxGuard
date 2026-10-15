@@ -53,9 +53,9 @@ public class JapanesePIIPatternTests
     #region My Number (PII_JA001)
 
     [Theory]
-    [InlineData("1234-5678-9018")]
-    [InlineData("1234 5678 9018")]
-    [InlineData("123456789018")]   // valid check digit
+    [InlineData("マイナンバー: 1234-5678-9018")]
+    [InlineData("個人番号 1234 5678 9018")]
+    [InlineData("My Number 123456789018")]   // a label and a valid check digit
     public async Task CheckAsync_DetectsMyNumber(string myNumber)
     {
         var context = new GuardContext { OriginalInput = $"My number is {myNumber}" };

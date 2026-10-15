@@ -4,6 +4,15 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## 0.23.1 - 2026-10-16
+
+### Fixed
+- **A 12-digit order or ticket number no longer blocks as a Japanese My Number by chance.** 0.23.0 accepted any 12-digit
+  number whose last digit passed the My Number check digit — about one in eleven, so a date-plus-sequence order number
+  such as «주문번호 202610160001» blocked as Critical PII. A My Number now also needs a label before it (マイナンバー ·
+  個人番号 · My Number · 마이넘버), like the other number patterns without a reliable check. An unlabelled My Number is no
+  longer detected.
+
 ## 0.23.0 - 2026-10-16
 
 ### Added

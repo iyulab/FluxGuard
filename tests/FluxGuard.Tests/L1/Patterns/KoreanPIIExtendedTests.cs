@@ -99,7 +99,7 @@ public class KoreanPIIExtendedTests
         usResult.Score.Should().BeGreaterThan(0);
 
         // Japanese My Number
-        var jaResult = await multiGuard.CheckAsync(new GuardContext { OriginalInput = "1234-5678-9018" });
+        var jaResult = await multiGuard.CheckAsync(new GuardContext { OriginalInput = "マイナンバー 1234-5678-9018" });
         jaResult.Score.Should().BeGreaterThan(0);
     }
 

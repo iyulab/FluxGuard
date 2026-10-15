@@ -23,6 +23,7 @@ public class BenignNumberProbeTests
     [InlineData("타임스탬프 1792104021927 를 날짜로 바꿔줘")]
     [InlineData("Order 987654321012 shipped")]
     [InlineData("Shipment 4821553911701234 is delayed")]
+    [InlineData("주문번호 202610160001 상태를 알려줘")]          // passes the My Number check digit, has no label
     public async Task Input_BenignNumber_IsNotBlocked(string input)
     {
         var result = await Guard.CheckInputAsync(input, TestContext.Current.CancellationToken);

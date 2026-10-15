@@ -54,20 +54,24 @@ public class PIIActionTests
     [Fact]
     public async Task InputCreditCard_Flag_OverridesBlockDefault()
     {
-        // Each matching pattern acts on its own: a 16-digit card number also matches the 12-digit MyNumber pattern
-        // (Critical), so flagging card numbers alone still blocks; naming both flags the input.
+        // Each matching pattern acts on its own: text that a second Critical pattern also matches still blocks unless
+        // that pattern is named too.
         var cardOnly = Build(b => b.ConfigureInputGuards(o => o.PIIExposureActions["CreditCard"] = PIIAction.Flag));
         var both = Build(b => b.ConfigureInputGuards(o =>
         {
             o.PIIExposureActions["CreditCard"] = PIIAction.Flag;
-            o.PIIExposureActions["MyNumber"] = PIIAction.Flag;
+            o.PIIExposureActions["Password"] = PIIAction.Flag;
         }));
+        const string input = "My card is 4111-1111-1111-1111, password: hunter2!";
 
-        var cardOnlyResult = await cardOnly.CheckInputAsync("My card is 4111-1111-1111-1111", TestContext.Current.CancellationToken);
-        var bothResult = await both.CheckInputAsync("My card is 4111-1111-1111-1111", TestContext.Current.CancellationToken);
+        var cardOnlyResult = await cardOnly.CheckInputAsync(input, TestContext.Current.CancellationToken);
+        var bothResult = await both.CheckInputAsync(input, TestContext.Current.CancellationToken);
+        var cardAlone = await cardOnly.CheckInputAsync("My card is 4111-1111-1111-1111", TestContext.Current.CancellationToken);
 
+        cardAlone.IsBlocked.Should().BeFalse();
+        cardAlone.Decision.Should().Be(GuardDecision.Flagged);
         cardOnlyResult.IsBlocked.Should().BeTrue();
-        cardOnlyResult.BlockReason.Should().Contain("MyNumber");
+        cardOnlyResult.BlockReason.Should().Contain("Password");
         bothResult.IsBlocked.Should().BeFalse();
         bothResult.Decision.Should().Be(GuardDecision.Flagged);
     }

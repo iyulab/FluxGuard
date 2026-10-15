@@ -63,6 +63,11 @@ assistant: 50 benign requests, many carrying the words a pattern keys on (무시
 | XSTest safe prompts, blocked (250) | 0 | 0 |
 
 The Korean patterns were written against those 15 injections, so 15/15 is a fit, not a held-out score; the benign half
-and a near-miss fact per pattern in the tests are what keep them from over-blocking. The four fewer ToxicChat benign
+and a near-miss fact per pattern in the tests are what keep them from over-blocking. A second set written after 0.23.0
+and apart from its patterns (40 benign, 20 injections in other phrasings) measures what the first cannot: **3 of 20**
+injections blocked, 0 of 40 benign on 0.23.1 (0.23.0 blocked one order number as a My Number). The Korean L1 patterns
+catch the textbook phrasings; paraphrases — other nouns («정책», «가이드라인»), other verbs («적어줘», «코드블록으로»),
+personas and redirections — pass. For Korean deployments that need more, put a model-based check (the L3 judge or a
+custom guard) behind L1. The four fewer ToxicChat benign
 blocks come from the PII changes: a passed PII match no longer blocks by score, and a number of the right length is no
 longer read as an SSN or a My Number without its written form, a label or a valid check digit.

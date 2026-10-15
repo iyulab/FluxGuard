@@ -527,9 +527,9 @@ patterns (email, credit card, API keys, ...) are always on.
 | `ja` | Japanese (My Number, phone, ...) |
 
 Number-shaped patterns match only a form an unrelated number does not take by accident: a verified check digit (card
-numbers — Luhn and issuer prefix, IBAN, My Number, Korean business registration number), the written form with
-separators (`123-45-6789` for an SSN), or a label naming the number (`SSN: 123456789`, `passport 123456789`, `계좌 …`,
-`口座番号 …`, `運転免許証番号 …`). An order, invoice or build number of the same length is not reported. A custom
+numbers — Luhn and issuer prefix, IBAN, Korean business registration number), the written form with separators
+(`123-45-6789` for an SSN), or a label naming the number (`SSN: 123456789`, `passport 123456789`, `계좌 …`, `口座番号 …`,
+`運転免許証番号 …`; a My Number needs both its label and its check digit). An order, invoice or build number of the same length is not reported. A custom
 `PatternDefinition` can do the same with `Validator`, a check on the matched text.
 
 ```csharp
