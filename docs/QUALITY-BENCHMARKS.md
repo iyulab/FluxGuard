@@ -30,4 +30,19 @@ are usable only as positive examples, which GuardBench already does.
 
 ## Status
 
-Not yet measured. Results will be added here with the package version, the preset and the model behind any model-based guard.
+The built-in guards are L1 pattern guards for prompt injection, jailbreak, encoding bypass and PII — not a toxicity
+classifier — so the GuardBench toxicity sets measure what an added model guard would do, and for L1 they show only that
+it does not try. What L1 is for was measured on the sets that label it (2026-10-15, `IFluxGuard.CheckInputAsync`,
+standard preset, positive = blocked):
+
+| Set | Label | 0.21.0 precision / recall | unreleased (next release) | Benign blocked |
+|---|---|---|---|---|
+| deepset/prompt-injections, test split (60 injections of 116) | injection | 1.000 / 0.067 | 1.000 / 0.350 | 0 of 56 → 0 of 56 |
+| ToxicChat 0124 test (91 jailbreaks of 5,083) | jailbreaking | 0.611 / 0.363 | 0.607 / 0.374 | 21 → 22 of 4,992 |
+| XSTest safe prompts (250) | — (over-blocking) | — | — | 0 → 0 |
+| ToxicChat 0124 test (362 toxic) | toxicity (not an L1 target) | 0.630 / 0.094 | — | — |
+
+The new patterns were written against the deepset **train** split and judged on the test split and the two benign sets.
+What the injection guard still misses is mostly role and persona prompts («I want you to act as a linux terminal»), which
+deepset labels injections and which are ordinary prompts in most applications, and paraphrases a pattern cannot cover
+without blocking benign text — a model-based check (a custom guard, or the L3 judge) is the layer for those.
