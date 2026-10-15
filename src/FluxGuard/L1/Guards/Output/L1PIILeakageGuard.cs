@@ -1,4 +1,5 @@
 using FluxGuard.Abstractions;
+using FluxGuard.Configuration;
 using FluxGuard.Core;
 using FluxGuard.L1.Patterns;
 using FluxGuard.L1.Patterns.Generated;
@@ -14,6 +15,7 @@ public sealed class L1PIILeakageGuard : IOutputGuard
 {
     private readonly PatternEngine _engine;
     private readonly IReadOnlyList<string> _enabledLanguages;
+    private readonly PIIActionPolicy _policy;
 
     public string Name => "L1PIILeakage";
     public string Layer => "L1";
@@ -23,11 +25,14 @@ public sealed class L1PIILeakageGuard : IOutputGuard
     public L1PIILeakageGuard(
         IPatternRegistry registry,
         bool isEnabled = true,
-        IReadOnlyList<string>? enabledLanguages = null)
+        IReadOnlyList<string>? enabledLanguages = null,
+        IReadOnlyDictionary<string, PIIAction>? actions = null)
     {
         _engine = new PatternEngine(registry);
         IsEnabled = isEnabled;
         _enabledLanguages = enabledLanguages ?? ["en", "ko", "ja", "zh", "es", "fr", "de", "pt", "ru", "ar"];
+        // Per-pattern overrides; a pattern not named keeps its severity default (High and Critical block, everything else flags).
+        _policy = new PIIActionPolicy(actions, Severity.High, "OutputGuardOptions.PIILeakageActions");
 
         // Register common PII patterns
         if (!registry.HasCategory(PIIPatterns.Category))
@@ -81,66 +86,43 @@ public sealed class L1PIILeakageGuard : IOutputGuard
         if (_enabledLanguages.Contains("en"))
             categories.Add(USPIIPatterns.Category);
 
-        PatternMatch? criticalMatch = null;
         var allMatches = new List<PatternMatch>();
 
         foreach (var category in categories)
         {
-            var matches = _engine.Match(output, category);
-            allMatches.AddRange(matches);
-
-            // Find critical match
-            var critical = matches.FirstOrDefault(m => m.Severity >= Severity.Critical);
-            if (critical is not null && criticalMatch is null)
-            {
-                criticalMatch = critical;
-            }
+            allMatches.AddRange(_engine.Match(output, category));
         }
 
-        if (allMatches.Count == 0)
+        var (blocking, reported) = _policy.Decide(allMatches);
+        if (reported.Count == 0)
         {
             return ValueTask.FromResult(GuardCheckResult.Safe);
         }
 
-        // Critical PII in output -> block
-        if (criticalMatch is not null)
+        // A pattern whose action is Block (by default High and Critical PII - output is more sensitive than input) -> refuse
+        if (blocking is not null)
         {
             return ValueTask.FromResult(GuardCheckResult.Block(
-                score: criticalMatch.Confidence,
-                severity: criticalMatch.Severity,
-                pattern: criticalMatch.PatternName,
-                matchedText: MaskPII(criticalMatch.MatchedText),
-                details: $"Critical PII leakage detected in output: {criticalMatch.PatternName}"));
+                score: blocking.Confidence,
+                severity: blocking.Severity,
+                pattern: blocking.PatternName,
+                matchedText: MaskPII(blocking.MatchedText),
+                details: blocking.Severity >= Severity.Critical
+                    ? $"Critical PII leakage detected in output: {blocking.PatternName}"
+                    : $"PII leakage detected in output: {blocking.PatternName}"));
         }
 
-        // High severity PII in output -> block (output is more sensitive than input)
-        var highMatch = allMatches.FirstOrDefault(m => m.Severity >= Severity.High);
-        if (highMatch is not null)
-        {
-            return ValueTask.FromResult(GuardCheckResult.Block(
-                score: highMatch.Confidence,
-                severity: highMatch.Severity,
-                pattern: highMatch.PatternName,
-                matchedText: MaskPII(highMatch.MatchedText),
-                details: $"PII leakage detected in output: {highMatch.PatternName}"));
-        }
-
-        // Medium severity -> flag but allow
+        // Everything else is reported, not refused: the check can be flagged but not blocked
+        var top = reported.MaxBy(m => m.Severity)!;
         return ValueTask.FromResult(new GuardCheckResult
         {
             Passed = true,
-            Score = allMatches.Max(m => m.Confidence),
-            Severity = allMatches.Max(m => m.Severity),
-            Pattern = allMatches.First().PatternName,
-            Details = $"Minor PII in output: {allMatches.Count} instance(s)"
+            Score = reported.Max(m => m.Confidence),
+            Severity = top.Severity,
+            Pattern = top.PatternName,
+            Details = $"Minor PII in output: {reported.Count} instance(s)"
         });
     }
 
-    private static string MaskPII(string text)
-    {
-        if (string.IsNullOrEmpty(text) || text.Length < 4)
-            return "****";
-
-        return text[..2] + new string('*', Math.Min(text.Length - 4, 10)) + text[^2..];
-    }
+    private static string MaskPII(string text) => PIIActionPolicy.Mask(text);
 }

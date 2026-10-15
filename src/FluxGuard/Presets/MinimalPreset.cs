@@ -52,6 +52,6 @@ public static class MinimalPreset
         IList<string> supportedLanguages)
     {
         if (options.EnablePIILeakage)
-            yield return new L1PIILeakageGuard(registry, true, supportedLanguages.ToList());
+            yield return new L1PIILeakageGuard(registry, true, supportedLanguages.ToList(), options.PIILeakageActions.AsReadOnly());
     }
 }

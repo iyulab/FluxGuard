@@ -109,6 +109,7 @@ Not part of any preset: the L3 (remote) guards are added explicitly — see
 | Length limits | `InputGuardOptions.MaxInputLength`, `OutputGuardOptions.MaxOutputLength` | On (128,000 characters); `0` disables |
 | Presets | `FluxGuardBuilder.WithPreset(GuardPreset)`, `ApplyMinimalPreset()` / `ApplyStandardPreset()` / `ApplyStrictPreset()` | `Standard` when none is named |
 | Fail mode and guard timeout | `FluxGuardOptions.FailMode`, `GuardTimeoutMs`; `FluxGuardBuilder.WithFailMode` | Derived from the preset when unset; timeout 5000 ms |
+| PII action per pattern (block / flag / ignore) | `InputGuardOptions.PIIExposureActions`, `OutputGuardOptions.PIILeakageActions` | Empty (severity defaults); see [PII actions](#pii-actions) |
 | Custom guards | `IInputGuard` / `IOutputGuard` + `FluxGuardBuilder.AddInputGuard` / `AddOutputGuard` | Opt-in |
 | Hooks | `FluxGuardBuilder.WithHooks(...)` (`LambdaHooksBuilder`, `IFluxGuardHooks`, `FluxGuardHooks`) | Opt-in |
 | Streaming output validation | `StreamingGuardOrchestrator.ValidateStreamAsync` with `IStreamingGuard`s (e.g. `L1StreamingPIIGuard`, which replaces PII with `[REDACTED]`) | Opt-in: construct it yourself; not part of the `IFluxGuard` pipeline |
@@ -227,6 +228,32 @@ standard thresholds (0.9 / 0.7 / 0.5); set `BlockThreshold` / `FlagThreshold` / 
 
 Switches set with `ConfigureInputGuards` / `ConfigureOutputGuards` apply to the preset's guards whether they
 are set before or after the preset is chosen.
+
+### PII actions
+
+The PII guards decide from each pattern's severity: in input, Critical PII (credit cards, private keys, API keys,
+passwords, national ID numbers) blocks and everything else flags; in output, High and Critical PII blocks. A flagged
+check is `GuardDecision.Flagged` with the matches in `TriggeredGuards` — it is never blocked by score. Name a pattern to
+choose for it:
+
+```csharp
+using FluxGuard;
+using FluxGuard.Configuration;
+using FluxGuard.Presets;
+
+var guard = FluxGuardBuilder.Create(b => b.ApplyStandardPreset())
+    .ConfigureInputGuards(o =>
+    {
+        o.PIIExposureActions["IPAddress"] = PIIAction.Ignore;     // IP addresses are ordinary words here
+        o.PIIExposureActions["EmailAddress"] = PIIAction.Block;   // never send an email address to the model
+    })
+    .ConfigureOutputGuards(o => o.PIILeakageActions["EmailAddress"] = PIIAction.Block)
+    .Build();
+```
+
+Names are the patterns of `PIIPatterns`, `KoreanPIIPatterns`, `JapanesePIIPatterns` and `USPIIPatterns`
+(case-insensitive); an unknown name throws `ArgumentException` listing the known ones when the guard is built. Each
+matching pattern acts on its own, so text that two patterns match blocks if either is set to block.
 
 ### Dependency Injection
 

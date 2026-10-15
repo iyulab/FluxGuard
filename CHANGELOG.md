@@ -6,6 +6,14 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
 
 ## [Unreleased]
 
+### Added
+- **Choose what the PII guards do per pattern: block, flag or ignore.** `InputGuardOptions.PIIExposureActions` and
+  `OutputGuardOptions.PIILeakageActions` map a pattern name (`"IPAddress"`, `"EmailAddress"`, `"ResidentRegistrationNumber"`,
+  … case-insensitive) to `PIIAction.Block` / `Flag` / `Ignore`; a pattern not named keeps its severity default. An unknown
+  name throws `ArgumentException` when the guard is built. The guard constructors take the map as an optional last
+  parameter. Use it to keep blocking email addresses after the fix below, or to stop flagging IP addresses in a
+  deployment where they are ordinary words.
+
 ### Fixed
 - **Breaking: a guard that passes a text no longer blocks it through `BlockThreshold`.** The core compared every guard's
   score with the block threshold, but a guard that passes a text reports how sure it is of what it found, not how risky

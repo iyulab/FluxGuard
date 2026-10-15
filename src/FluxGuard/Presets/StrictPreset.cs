@@ -50,7 +50,7 @@ public static class StrictPreset
             escalationThreshold: 0.3);
 
         if (options.EnablePIIExposure)
-            yield return new L1PIIExposureGuard(registry, true, options.SupportedLanguages.ToList());
+            yield return new L1PIIExposureGuard(registry, true, options.SupportedLanguages.ToList(), options.PIIExposureActions.AsReadOnly());
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public static class StrictPreset
         IList<string> supportedLanguages)
     {
         if (options.EnablePIILeakage)
-            yield return new L1PIILeakageGuard(registry, true, supportedLanguages.ToList());
+            yield return new L1PIILeakageGuard(registry, true, supportedLanguages.ToList(), options.PIILeakageActions.AsReadOnly());
 
         if (options.EnableRefusal)
             yield return new L1RefusalGuard();
