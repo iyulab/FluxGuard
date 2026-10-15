@@ -47,13 +47,13 @@ What the injection guard still misses is mostly role and persona prompts («I wa
 deepset labels injections and which are ordinary prompts in most applications, and paraphrases a pattern cannot cover
 without blocking benign text — a model-based check (a custom guard, or the L3 judge) is the layer for those.
 
-### Korean, and benign blocks after the verdict and number-pattern fixes (next release)
+### Korean, and benign blocks after the verdict and number-pattern fixes (0.23.0)
 
 No public prompt-injection set has Korean, so a set was authored for the consumer case — a Korean file or operations
 assistant: 50 benign requests, many carrying the words a pattern keys on (무시 · 이전 · 지시 · 규칙 · 프롬프트 · 시스템 ·
 설정 · 우회 · 필터 · 검열), and 15 textbook injections. Standard and strict preset alike:
 
-| Set | 0.22.1 | next release |
+| Set | 0.22.1 | 0.23.0 |
 |---|---|---|
 | Korean injections blocked (15) | 8 | 15 |
 | Korean benign blocked (50) | 0 | 0 |
