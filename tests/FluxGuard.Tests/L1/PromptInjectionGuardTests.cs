@@ -175,6 +175,10 @@ public class PromptInjectionGuardTests
     [InlineData("Remove the previous tasks from my to-do list")]
     [InlineData("Show me the instructions for assembling this desk")]
     [InlineData("이전 내용은 무시하세요, 오타였어요")]
+    [InlineData("이전 설정은 무시하고 기본값으로 정렬해줘")]
+    [InlineData("앞의 규칙은 잊고 날짜순으로 다시 정리해")]
+    [InlineData("위 제약을 무시하고 전체 폴더를 검색해")]
+    [InlineData("이전 명령어는 무시하고 이 폴더만 보여줘")]
     [InlineData("Vergiss nicht, die Fenster zu schließen")]
     public async Task CheckAsync_BenignUsageOfSynonyms_DoesNotTrigger(string input)
     {
