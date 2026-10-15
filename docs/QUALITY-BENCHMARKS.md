@@ -46,3 +46,23 @@ The new patterns were written against the deepset **train** split and judged on 
 What the injection guard still misses is mostly role and persona prompts («I want you to act as a linux terminal»), which
 deepset labels injections and which are ordinary prompts in most applications, and paraphrases a pattern cannot cover
 without blocking benign text — a model-based check (a custom guard, or the L3 judge) is the layer for those.
+
+### Korean, and benign blocks after the verdict and number-pattern fixes (next release)
+
+No public prompt-injection set has Korean, so a set was authored for the consumer case — a Korean file or operations
+assistant: 50 benign requests, many carrying the words a pattern keys on (무시 · 이전 · 지시 · 규칙 · 프롬프트 · 시스템 ·
+설정 · 우회 · 필터 · 검열), and 15 textbook injections. Standard and strict preset alike:
+
+| Set | 0.22.1 | next release |
+|---|---|---|
+| Korean injections blocked (15) | 8 | 15 |
+| Korean benign blocked (50) | 0 | 0 |
+| ToxicChat 0124 test, benign blocked (4,992) | 22 | 18 |
+| ToxicChat 0124 test, jailbreak recall (91) | 0.374 | 0.374 |
+| deepset/prompt-injections test + train, recall / benign blocked (263 / 399) | 0.285 / 0 | 0.285 / 0 |
+| XSTest safe prompts, blocked (250) | 0 | 0 |
+
+The Korean patterns were written against those 15 injections, so 15/15 is a fit, not a held-out score; the benign half
+and a near-miss fact per pattern in the tests are what keep them from over-blocking. The four fewer ToxicChat benign
+blocks come from the PII changes: a passed PII match no longer blocks by score, and a number of the right length is no
+longer read as an SSN or a My Number without its written form, a label or a valid check digit.
