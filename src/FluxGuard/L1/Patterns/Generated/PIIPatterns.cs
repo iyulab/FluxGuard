@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using FluxGuard.Abstractions;
 using FluxGuard.Core;
+using FluxGuard.L1.Patterns.PII;
 
 namespace FluxGuard.L1.Patterns.Generated;
 
@@ -42,6 +43,7 @@ public static partial class PIIPatterns
             Id = "PII003",
             Name = "CreditCard",
             Regex = CreditCardRegex(),
+            Validator = PIIChecksums.IsPaymentCardNumber,
             Severity = Severity.Critical,
             Confidence = 0.95,
             Description = "Detects credit card numbers"
@@ -52,6 +54,7 @@ public static partial class PIIPatterns
             Id = "PII004",
             Name = "IBAN",
             Regex = IBANRegex(),
+            Validator = PIIChecksums.IsIban,
             Severity = Severity.High,
             Confidence = 0.9,
             Description = "Detects IBAN account numbers"
@@ -134,7 +137,9 @@ public static partial class PIIPatterns
 
     // Credit card number (major brands)
     [GeneratedRegex(
-        @"\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\d{3})\d{11})\b",
+        // 13-19 digits, contiguous or grouped with spaces/hyphens; the issuer prefix and the Luhn check digit are
+        // verified by PIIChecksums.IsPaymentCardNumber (a 16-digit order number is not a card number).
+        @"\b(?:\d[ -]?){12,18}\d\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex CreditCardRegex();
@@ -143,7 +148,8 @@ public static partial class PIIPatterns
     // NOTE: keep the tail as a plain bounded class — the previous ([A-Z0-9]?){0,16} was a nested
     // quantifier (ambiguous empty matches -> exponential backtracking paths on near-misses).
     [GeneratedRegex(
-        @"\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}[A-Z0-9]{0,16}\b",
+        // Contiguous or in the printed groups of four; the check digits are verified by PIIChecksums.IsIban.
+        @"\b[A-Z]{2}[0-9]{2}(?: ?[A-Z0-9]{4}){2,7}(?: ?[A-Z0-9]{1,4})?\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex IBANRegex();

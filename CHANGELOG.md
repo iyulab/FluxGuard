@@ -7,6 +7,8 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
 ## [Unreleased]
 
 ### Added
+- **`PatternDefinition.Validator`**: an optional check on the matched text (a check digit, a checksum); the pattern engine
+  drops a match it rejects, in `Match`, `IsMatch` and `FirstMatch` alike.
 - **Choose what the PII guards do per pattern: block, flag or ignore.** `InputGuardOptions.PIIExposureActions` and
   `OutputGuardOptions.PIILeakageActions` map a pattern name (`"IPAddress"`, `"EmailAddress"`, `"ResidentRegistrationNumber"`,
   … case-insensitive) to `PIIAction.Block` / `Flag` / `Ignore`; a pattern not named keeps its severity default. An unknown
@@ -15,6 +17,22 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   deployment where they are ordinary words.
 
 ### Fixed
+- **Breaking: order, invoice, build and serial numbers are no longer blocked as national ID, passport or account
+  numbers.** With the default languages (`en`, `ko`, `ja`), any 9-digit number in input blocked as a US SSN
+  («주문번호 123456789», «Invoice 482915736»), any 12-digit number — contiguous or grouped `1234-5678-9012` — as a Japanese
+  My Number, and in output any 7-digit number as a Japanese bank account and any 8–9 digit number as a US passport;
+  10 of 11 such sentences were blocked in a probe. Number-shaped patterns now need a form an unrelated number does not
+  take by accident:
+  - a verified check digit — card numbers (Luhn and issuer prefix; grouped `4111 1111 1111 1111` is now detected too),
+    IBAN (mod 97; printed groups of four are now detected too), My Number, Korean business registration number;
+  - the written form with separators — SSN and ITIN `ddd-dd-dddd`, EIN `dd-ddddddd`, Korean driver licence
+    `dd-dd-dddddd-dd`;
+  - or a label naming the number before it — `SSN` / `social security`, `ITIN`, `EIN`, `passport`, Korean account words
+    (계좌 · 통장 · 입금 · 송금 · 이체), 운전면허, 口座, 運転免許 / 免許証.
+  Unchanged: Korean resident registration numbers (newer ones carry no check digit; the date and gender digits are
+  already checked). Migration: a bare 9-digit SSN or a bare account number without a label is no longer detected; if
+  your inputs carry them that way, register a custom pattern (`PatternDefinition.Validator` checks the matched text).
+  `PIIAction.Block` applies to what a pattern matches, so it cannot restore the old, looser match.
 - **Breaking: a guard that passes a text no longer blocks it through `BlockThreshold`.** The core compared every guard's
   score with the block threshold, but a guard that passes a text reports how sure it is of what it found, not how risky
   the text is. So with the standard preset (threshold 0.9) the PII exposure guard's «tracked, not refused» matches

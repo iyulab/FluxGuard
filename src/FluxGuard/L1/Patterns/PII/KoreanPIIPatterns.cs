@@ -82,6 +82,7 @@ public static partial class KoreanPIIPatterns
             Id = "PII_KO007",
             Name = "KoreanBusinessNumber",
             Regex = KoreanBusinessNumberRegex(),
+            Validator = PIIChecksums.IsKoreanBusinessNumber,
             Severity = Severity.Medium,
             Confidence = 0.85,
             Description = "Detects Korean business registration numbers"
@@ -135,7 +136,8 @@ public static partial class KoreanPIIPatterns
 
     // Korean driver's license: XX-XX-XXXXXX-XX
     [GeneratedRegex(
-        @"\b\d{2}[-\s]?\d{2}[-\s]?\d{6}[-\s]?\d{2}\b",
+        // The written form dd-dd-dddddd-dd, or a licence label (운전면허) before the bare 12 digits.
+        @"\b\d{2}-\d{2}-\d{6}-\d{2}\b|운전면허(?:증)?(?:\s*번호)?[^\d\n]{0,20}\d{2}[-\s]?\d{2}[-\s]?\d{6}[-\s]?\d{2}\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanDriverLicenseRegex();
@@ -149,7 +151,9 @@ public static partial class KoreanPIIPatterns
 
     // Korean bank account numbers (10-16 digits, with optional hyphens)
     [GeneratedRegex(
-        @"\b\d{3,4}[-\s]?\d{2,4}[-\s]?\d{4,6}[-\s]?\d{0,4}\b",
+        // Bank account formats vary by bank and overlap with phone, order and serial numbers: require an account
+        // label (계좌 / 통장 / 입금 / 송금 / 이체) before the number.
+        @"(?:계좌|통장|입금|송금|이체)(?:\s*번호)?[^\d\n]{0,20}\d{2,6}(?:[-\s]?\d{2,6}){1,3}\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanBankAccountRegex();

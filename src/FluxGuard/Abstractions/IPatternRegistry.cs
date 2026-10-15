@@ -66,6 +66,12 @@ public sealed record PatternDefinition
     public double Confidence { get; init; } = 0.8;
 
     /// <summary>
+    /// Optional check on the matched text, for formats the regular expression cannot verify by itself (a check digit,
+    /// a checksum). A match it rejects is dropped. Null keeps every match.
+    /// </summary>
+    public Func<string, bool>? Validator { get; init; }
+
+    /// <summary>
     /// Description
     /// </summary>
     public string? Description { get; init; }

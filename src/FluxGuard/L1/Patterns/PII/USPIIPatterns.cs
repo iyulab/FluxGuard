@@ -90,7 +90,9 @@ public static partial class USPIIPatterns
 
     // Social Security Number: XXX-XX-XXXX
     [GeneratedRegex(
-        @"\b(?!000|666|9\d{2})\d{3}[-\s]?(?!00)\d{2}[-\s]?(?!0000)\d{4}\b",
+        // An SSN has no check digit, so a bare 9-digit number (an invoice, an order) cannot be told from one: require
+        // the written form (ddd-dd-dddd, one separator throughout) or an "SSN" / "social security" label before it.
+        @"\b(?!000|666|9\d{2})\d{3}([-\s])(?!00)\d{2}\1(?!0000)\d{4}\b|(?i:\b(?:ssn|social\s+security(?:\s+(?:number|no\.?|#))?)\b[^\d\n]{0,20})(?!000|666|9\d{2})\d{3}[-\s]?(?!00)\d{2}[-\s]?(?!0000)\d{4}\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex SSNRegex();
@@ -111,7 +113,8 @@ public static partial class USPIIPatterns
 
     // US passport number: 9 digits
     [GeneratedRegex(
-        @"\b[A-Z]?\d{8,9}\b",
+        // Any 8-9 digit number is not a passport number: require the "passport" label.
+        @"(?i:\bpassport\b[^\d\n]{0,20})[A-Z]?\d{8,9}\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex USPassportRegex();
@@ -125,14 +128,16 @@ public static partial class USPIIPatterns
 
     // Employer Identification Number: XX-XXXXXXX
     [GeneratedRegex(
-        @"\b\d{2}[-]?\d{7}\b",
+        // The written form dd-ddddddd, or an "EIN" / "employer identification" label before a bare 9-digit number.
+        @"\b\d{2}-\d{7}\b|(?i:\b(?:EIN|employer\s+identification(?:\s+number)?)\b[^\d\n]{0,20})\d{9}\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex USEINRegex();
 
     // Individual Taxpayer Identification Number: 9XX-XX-XXXX
     [GeneratedRegex(
-        @"\b9\d{2}[-\s]?\d{2}[-\s]?\d{4}\b",
+        // As for SSN: the written form 9dd-dd-dddd, or an "ITIN" label before a bare 9-digit number.
+        @"\b9\d{2}([-\s])\d{2}\1\d{4}\b|(?i:\bITIN\b[^\d\n]{0,20})9\d{8}\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex USITINRegex();

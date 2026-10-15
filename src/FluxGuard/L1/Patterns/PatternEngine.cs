@@ -48,6 +48,9 @@ public sealed class PatternEngine
 
                 foreach (Match match in regexMatches)
                 {
+                    if (!IsValid(pattern, match))
+                        continue;
+
                     matches.Add(new PatternMatch
                     {
                         PatternId = pattern.Id,
@@ -123,7 +126,7 @@ public sealed class PatternEngine
         {
             try
             {
-                if (pattern.Regex.IsMatch(input))
+                if (FirstValidMatch(pattern, input) is not null)
                     return true;
             }
             catch (RegexMatchTimeoutException)
@@ -134,6 +137,21 @@ public sealed class PatternEngine
         }
 
         return false;
+    }
+
+    private static bool IsValid(PatternDefinition pattern, Match match) =>
+        pattern.Validator is not { } validator || validator(match.Value);
+
+    /// <summary>The first match of <paramref name="pattern"/> its validator accepts, or null.</summary>
+    private static Match? FirstValidMatch(PatternDefinition pattern, string input)
+    {
+        for (var match = pattern.Regex.Match(input); match.Success; match = match.NextMatch())
+        {
+            if (IsValid(pattern, match))
+                return match;
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -153,8 +171,8 @@ public sealed class PatternEngine
         {
             try
             {
-                var match = pattern.Regex.Match(input);
-                if (match.Success)
+                var match = FirstValidMatch(pattern, input);
+                if (match is not null)
                 {
                     return new PatternMatch
                     {

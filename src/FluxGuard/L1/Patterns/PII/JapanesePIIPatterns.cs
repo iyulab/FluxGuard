@@ -22,6 +22,7 @@ public static partial class JapanesePIIPatterns
             Id = "PII_JA001",
             Name = "MyNumber",
             Regex = MyNumberRegex(),
+            Validator = PIIChecksums.IsMyNumber,
             Severity = Severity.Critical,
             Confidence = 0.9,
             Description = "Detects Japanese My Number (Individual Number)"
@@ -101,7 +102,8 @@ public static partial class JapanesePIIPatterns
 
     // Japanese driver's license: 12 digits
     [GeneratedRegex(
-        @"\b\d{12}\b",
+        // Any 12-digit number is not a licence number: require a licence label (運転免許 / 免許証).
+        @"(?:運転免許(?:証)?|免許証)(?:番号)?[^\d\n]{0,20}\d{12}\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex JapaneseDriverLicenseRegex();
@@ -115,7 +117,8 @@ public static partial class JapanesePIIPatterns
 
     // Japanese bank account numbers (7 digits typically)
     [GeneratedRegex(
-        @"\b\d{7}\b",
+        // Any 7-digit number is not an account number: require an account label (口座).
+        @"口座(?:番号)?[^\d\n]{0,20}\d{7}\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex JapaneseBankAccountRegex();

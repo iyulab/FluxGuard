@@ -69,8 +69,8 @@ public class KoreanPIIExtendedTests
     #region Korean Business Number (PII_KO007)
 
     [Theory]
-    [InlineData("123-45-67890")]
-    [InlineData("987-65-43210")]
+    [InlineData("123-45-67891")]   // valid check digit
+    [InlineData("987-65-43215")]
     public async Task CheckAsync_DetectsKoreanBusinessNumber(string bn)
     {
         var context = new GuardContext { OriginalInput = $"사업자등록번호: {bn}" };
@@ -99,7 +99,7 @@ public class KoreanPIIExtendedTests
         usResult.Score.Should().BeGreaterThan(0);
 
         // Japanese My Number
-        var jaResult = await multiGuard.CheckAsync(new GuardContext { OriginalInput = "1234-5678-9012" });
+        var jaResult = await multiGuard.CheckAsync(new GuardContext { OriginalInput = "1234-5678-9018" });
         jaResult.Score.Should().BeGreaterThan(0);
     }
 
