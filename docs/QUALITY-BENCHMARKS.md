@@ -71,3 +71,24 @@ personas and redirections — pass. For Korean deployments that need more, put a
 custom guard) behind L1. The four fewer ToxicChat benign
 blocks come from the PII changes: a passed PII match no longer blocks by score, and a number of the right length is no
 longer read as an SSN or a My Number without its written form, a label or a valid check digit.
+
+### Korean general shapes (next release)
+
+Two pattern groups (`PI021` KoreanGeneralShapes, `JB010` KoreanPersonaOrMode) generalise the Korean coverage beyond the
+textbook phrasings: dismissing instructions the model was given or all its policies, reading out its given, hidden or
+initial rules (as the object of a read-out verb), the prompt read out verbatim, declaring the earlier instructions a
+test, unrestricted personas and unfiltered modes. They were tuned on the second set above, which is therefore no longer
+held out. A third set measures them: 60 injections across five families (overriding, extracting the prompt, persona or
+mode switches, redirections and fake system messages, and injections embedded in quoted documents or obfuscated by
+spacing, romanization or initial consonants) and 60 benign requests that share the attack vocabulary (규칙 · 지침 · 정책 ·
+프롬프트 · 무시 · 원문 · 관리자 · 모드), written by an author who never saw the patterns.
+
+| Standard preset | textbook (15 / 50) | tuning set (20 / 40) | third set (60 / 60) |
+|---|---|---|---|
+| 0.23.1, injections / benign blocked | 15 / 0 | 3 / 0 | 9 / 0 |
+| next release, injections / benign blocked | 15 / 0 | 20 / 0 | **16 / 0** |
+
+On text written apart from the patterns, Korean L1 recall goes from 0.15 to 0.27 at no cost in precision across 150
+benign Korean prompts. That is the honest ceiling of a regular-expression layer for an agglutinative, free-word-order
+language: the shapes it can name are the common copy-paste attacks. Obfuscated and embedded injections pass, and the
+contract above stands — for Korean deployments that need more, put a model-based check behind L1.
