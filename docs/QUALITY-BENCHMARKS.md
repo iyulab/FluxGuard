@@ -72,7 +72,7 @@ custom guard) behind L1. The four fewer ToxicChat benign
 blocks come from the PII changes: a passed PII match no longer blocks by score, and a number of the right length is no
 longer read as an SSN or a My Number without its written form, a label or a valid check digit.
 
-### Korean general shapes (next release)
+### Korean general shapes (0.24.0)
 
 Two pattern groups (`PI021` KoreanGeneralShapes, `JB010` KoreanPersonaOrMode) generalise the Korean coverage beyond the
 textbook phrasings: dismissing instructions the model was given or all its policies, reading out its given, hidden or
@@ -86,7 +86,7 @@ spacing, romanization or initial consonants) and 60 benign requests that share t
 | Standard preset | textbook (15 / 50) | tuning set (20 / 40) | third set (60 / 60) |
 |---|---|---|---|
 | 0.23.1, injections / benign blocked | 15 / 0 | 3 / 0 | 9 / 0 |
-| next release, injections / benign blocked | 15 / 0 | 20 / 0 | **16 / 0** |
+| 0.24.0, injections / benign blocked | 15 / 0 | 20 / 0 | **16 / 0** |
 
 On text written apart from the patterns, Korean L1 recall goes from 0.15 to 0.27 at no cost in precision across 150
 benign Korean prompts. That is the honest ceiling of a regular-expression layer for an agglutinative, free-word-order

@@ -4,7 +4,7 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
-## [Unreleased]
+## 0.24.0 - 2026-10-16
 
 ### Changed
 - **The Korean prompt-injection and jailbreak guards catch the general shapes, not only the textbook phrasings.** New
