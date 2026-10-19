@@ -4,6 +4,11 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## [Unreleased]
+
+### Dependencies
+- .NET runtime packages 10.0.12 -> 10.0.13 (the 10.0 servicing band; `Microsoft.Extensions.*` and their siblings move together).
+
 ## 0.24.0 - 2026-10-16
 
 ### Changed
