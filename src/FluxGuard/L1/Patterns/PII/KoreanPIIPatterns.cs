@@ -137,8 +137,8 @@ public static partial class KoreanPIIPatterns
 
     // Korean driver's license: XX-XX-XXXXXX-XX
     [GeneratedRegex(
-        // The written form dd-dd-dddddd-dd, or a licence label (운전면허) before the bare 12 digits.
-        @"\b\d{2}-\d{2}-\d{6}-\d{2}\b|운전면허(?:증)?(?:\s*번호)?[^\d\n]{0,20}\d{2}[-\s]?\d{2}[-\s]?\d{6}[-\s]?\d{2}\b",
+        // The written form dd-dd-dddddd-dd, or a licence label (운전면허, driver's license, driving licence) before the bare 12 digits.
+        @"\b\d{2}-\d{2}-\d{6}-\d{2}\b|(?:운전면허(?:증)?(?:\s*번호)?|[Dd]river'?s? [Ll]icen[cs]e|[Dd]riving [Ll]icen[cs]e)[^\d\n]{0,20}\d{2}[-\s]?\d{2}[-\s]?\d{6}[-\s]?\d{2}\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanDriverLicenseRegex();

@@ -33,4 +33,9 @@
     <ProjectReference Include="..\..\src\FluxGuard.Remote\FluxGuard.Remote.csproj" />
   </ItemGroup>
 
+  <!-- Shared verbatim with the other Korean PII detector's tests (the umbrella checks the copies are identical). -->
+  <ItemGroup>
+    <None Update="**\pipa-unique-identifiers.tsv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

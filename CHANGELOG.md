@@ -15,6 +15,8 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   (a foreign registration number blocks in input, as a resident number does; a passport number flags in input and blocks in
   output) where they passed before. To keep the old behaviour for one of them, set its action, e.g.
   `o.PIIExposureActions["KoreanPassport"] = PIIAction.Ignore`.
+- **`PII_KO004` reads an English license label too** — the bare twelve digits of a Korean driver's license after
+  `driver's license` / `driving licence` are matched as they were after `운전면허`.
 
 ### Dependencies
 - .NET runtime packages 10.0.12 -> 10.0.13 (the 10.0 servicing band; `Microsoft.Extensions.*` and their siblings move together).

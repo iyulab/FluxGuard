@@ -1,0 +1,16 @@
+# Korean unique identifiers (Personal Information Protection Act, Art. 24): positive samples that every Korean PII
+# detector shipped in this ecosystem must find. The same file is kept, byte for byte, in the FluxGuard and FluxCurator
+# test projects; each project's test maps the kinds to its own pattern names or types and keeps its own negative samples
+# (a masker and a blocking gate tolerate different false positives). Numbers are synthetic.
+# kind<TAB>text
+RRN	주민등록번호 850101-1234567 확인 바랍니다
+RRN	주민번호 0103154234567 로 조회
+RRN	외국인등록번호 900101-5234567
+RRN	외국인등록번호: 021120-8234567
+Passport	여권번호 M12345678
+Passport	여권번호: M123A4567
+Passport	Passport No. S987B6543, expires 2031
+Passport	passport R12345678
+DriversLicense	운전면허번호 11-22-123456-78
+DriversLicense	운전면허 112212345678
+DriversLicense	driver's license 12 34 567890 12
