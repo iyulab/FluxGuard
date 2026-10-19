@@ -24,7 +24,7 @@ public static partial class KoreanPIIPatterns
             Regex = ResidentRegistrationNumberRegex(),
             Severity = Severity.Critical,
             Confidence = 0.95,
-            Description = "Detects Korean Resident Registration Numbers (RRN)"
+            Description = "Detects Korean resident and foreign registration numbers (RRN, ARC)"
         };
 
         yield return new PatternDefinition
@@ -113,9 +113,10 @@ public static partial class KoreanPIIPatterns
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanPasswordRegex();
 
-    // Resident Registration Number: YYMMDD-GXXXXXX (13 digits with hyphen)
+    // Resident Registration Number: YYMMDD-GXXXXXX (13 digits with hyphen). G is 1-4 for residents and 5-8 for the foreign
+    // registration number, which has the same shape and is the same class of unique identifier (PIPA Art. 24).
     [GeneratedRegex(
-        @"\b(\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[-\s]?([1-4])\d{6}\b",
+        @"\b(\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[-\s]?([1-8])\d{6}\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex ResidentRegistrationNumberRegex();
@@ -142,9 +143,11 @@ public static partial class KoreanPIIPatterns
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanDriverLicenseRegex();
 
-    // Korean passport: M12345678, S12345678 (letter + 8 digits)
+    // Korean passport. The letter + 8 digits form (M, S, R, O, D, G) is matched alone, as before. The booklet issued since
+    // 2021-12-21 numbers letter + 3 digits + letter + 4 digits (M123A4567) - the shape of many part and order codes, and an
+    // input guard blocks on a match - so that form needs a passport label (여권 / passport) before it (a lookbehind: the match, and so a mask, is the number alone).
     [GeneratedRegex(
-        @"\b[MSmsDdGg]\d{8}\b",
+        @"\b[MSRODGmsrodg]\d{8}\b|(?<=(?:여권|[Pp]assport)[^\n]{0,20})\b[MSROD]\d{3}[A-Z]\d{4}\b",
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanPassportRegex();

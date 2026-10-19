@@ -6,6 +6,16 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
 
 ## [Unreleased]
 
+### Changed
+- **Breaking** — **the Korean PII patterns cover the foreign registration number and the passport issued since 2021.**
+  `PII_KO001` now matches the foreign registration number (the resident number's 13-digit shape with a 7th digit of 5-8),
+  and `PII_KO005` matches the R and O passport prefixes and the new letter + 3 digits + letter + 4 digits form
+  (`M123A4567`) when a passport label (`여권`, `passport`) comes before it — the bare shape is common in part and order
+  codes, so it is not matched alone. Inputs and responses carrying these numbers now get the action their severity sets
+  (a foreign registration number blocks in input, as a resident number does; a passport number flags in input and blocks in
+  output) where they passed before. To keep the old behaviour for one of them, set its action, e.g.
+  `o.PIIExposureActions["KoreanPassport"] = PIIAction.Ignore`.
+
 ### Dependencies
 - .NET runtime packages 10.0.12 -> 10.0.13 (the 10.0 servicing band; `Microsoft.Extensions.*` and their siblings move together).
 

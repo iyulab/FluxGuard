@@ -50,11 +50,32 @@ public class KoreanPIIExtendedTests
 
     #endregion
 
+    #region Resident / foreign registration number (PII_KO001)
+
+    [Theory]
+    [InlineData("850101-1234567")]  // resident, born 1900s
+    [InlineData("010315-4234567")]  // resident, born 2000s
+    [InlineData("900101-5234567")]  // foreign registration number: same 13-digit shape, 7th digit 5-8
+    [InlineData("021120-8234567")]
+    public async Task CheckAsync_DetectsResidentAndForeignRegistrationNumber(string number)
+    {
+        var context = new GuardContext { OriginalInput = $"등록번호 {number} 로 조회해 줘" };
+
+        var result = await _guard.CheckAsync(context);
+
+        result.Score.Should().BeGreaterThan(0);
+    }
+
+    #endregion
+
     #region Korean Passport (PII_KO005)
 
     [Theory]
     [InlineData("M12345678")]
     [InlineData("S87654321")]
+    [InlineData("R12345678")]      // residence passport
+    [InlineData("M123A4567")]      // the booklet issued since 2021-12-21: letter, 3 digits, letter, 4 digits
+    [InlineData("S987B6543")]
     public async Task CheckAsync_DetectsKoreanPassport(string passport)
     {
         var context = new GuardContext { OriginalInput = $"여권번호: {passport}" };
@@ -62,6 +83,24 @@ public class KoreanPIIExtendedTests
         var result = await _guard.CheckAsync(context);
 
         result.Score.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task CheckAsync_NewFormatPassport_IsDetectedWithAnEnglishLabelToo()
+    {
+        var result = await _guard.CheckAsync(new GuardContext { OriginalInput = "Passport No. M123A4567, expires 2031" });
+
+        result.Score.Should().BeGreaterThan(0);
+    }
+
+    [Theory]
+    [InlineData("부품 M123A4567 재고 확인")]        // a part number of the new passport shape, no passport label
+    [InlineData("Order line S100X2000 shipped")]
+    public async Task CheckAsync_NewFormatShapeWithoutPassportLabel_IsNotPassport(string input)
+    {
+        var result = await _guard.CheckAsync(new GuardContext { OriginalInput = input });
+
+        result.Score.Should().Be(0);
     }
 
     #endregion

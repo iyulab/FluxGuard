@@ -523,7 +523,7 @@ patterns (email, credit card, API keys, ...) are always on.
 | Code | Pattern set |
 |------|-------------|
 | `en` | US (SSN, phone, ...) |
-| `ko` | Korean (resident registration number, phone, credentials, ...) |
+| `ko` | Korean (resident and foreign registration numbers, passport, driver's license, phone, credentials, ...) |
 | `ja` | Japanese (My Number, phone, ...) |
 
 Number-shaped patterns match only a form an unrelated number does not take by accident: a verified check digit (card
