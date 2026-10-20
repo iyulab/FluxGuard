@@ -123,14 +123,14 @@ public static partial class KoreanPIIPatterns
 
     // Korean landline phone numbers: 02-XXXX-XXXX, 0XX-XXX-XXXX, 0XX-XXXX-XXXX
     [GeneratedRegex(
-        @"\b(02|0[3-6][1-5])[-.\s]?\d{3,4}[-.\s]?\d{4}\b",
+        NumericBoundary.Start + @"(02|0[3-6][1-5])[-.\s]?\d{3,4}[-.\s]?\d{4}" + NumericBoundary.End,
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanPhoneNumberRegex();
 
     // Korean mobile phone numbers: 010-XXXX-XXXX, 011-XXX-XXXX, etc.
     [GeneratedRegex(
-        @"\b01[016789][-.\s]?\d{3,4}[-.\s]?\d{4}\b",
+        NumericBoundary.Start + @"01[016789][-.\s]?\d{3,4}[-.\s]?\d{4}" + NumericBoundary.End,
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex KoreanMobileNumberRegex();

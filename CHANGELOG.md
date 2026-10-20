@@ -4,6 +4,18 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## Unreleased
+
+### Fixed
+- **The seconds of a time of day are no longer reported as a phone number.** With seven fractional digits (the .NET
+  round-trip `"O"` format, `10:24:03.5968830`, or a `TimeSpan` such as `00:00:02.5551234`) the Japanese and Korean
+  landline patterns and the streaming PII guard read the seconds as a phone number, so a log line or a tool result
+  carrying such a timestamp was flagged (and redacted in a stream). The phone patterns now treat a digit run joined by
+  a hyphen or a colon to another digit as part of a longer number. Behavior change, besides the fix: the streaming
+  guard no longer reports a phone-shaped slice of a longer digit run (an order or build number), and the Korean
+  patterns now find a phone number written directly against Hangul (`연락처02-1234-5678로`), as the US/Japanese ones
+  find `(555) 123-4567` and `+1-555-123-4567` with the parenthesis and the plus sign included.
+
 ## 0.25.0 - 2026-10-19
 
 ### Changed

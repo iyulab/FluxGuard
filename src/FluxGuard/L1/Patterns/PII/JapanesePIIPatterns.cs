@@ -91,7 +91,7 @@ public static partial class JapanesePIIPatterns
 
     // Japanese landline phone numbers: 0X-XXXX-XXXX, 0XX-XXX-XXXX
     [GeneratedRegex(
-        @"\b0\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{4}\b",
+        NumericBoundary.Start + @"0\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{4}" + NumericBoundary.End,
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex JapanesePhoneNumberRegex();

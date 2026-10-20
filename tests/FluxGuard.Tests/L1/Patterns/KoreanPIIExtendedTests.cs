@@ -32,6 +32,30 @@ public class KoreanPIIExtendedTests
         result.Score.Should().BeGreaterThan(0);
     }
 
+    [Theory]
+    [InlineData("2026-10-20T10:24:03.5968830+00:00 host sshd: session opened")]   // .NET round-trip "O" format
+    [InlineData("2026-10-20 10:24:03.5968830 host sshd: session opened")]
+    [InlineData("elapsed 00:00:02.5551234")]                                       // TimeSpan "c" format: 02.5551234
+    public async Task CheckAsync_SecondsOfATimeOfDay_AreNotAPhoneNumber(string input)
+    {
+        var guard = new L1PIIExposureGuard(new PatternRegistry(), enabledLanguages: ["ko", "ja", "en"]);
+
+        var result = await guard.CheckAsync(new GuardContext { OriginalInput = input });
+
+        result.Score.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData("10:24:03 call 02-555-1234")]
+    [InlineData("Tel:010-1234-5678")]
+    [InlineData("연락처02-1234-5678로")]                                            // glued to Hangul
+    public async Task CheckAsync_PhoneAfterTimeLabelOrHangul_IsDetected(string input)
+    {
+        var result = await _guard.CheckAsync(new GuardContext { OriginalInput = input });
+
+        result.Score.Should().BeGreaterThan(0);
+    }
+
     #endregion
 
     #region Korean Driver License (PII_KO004)

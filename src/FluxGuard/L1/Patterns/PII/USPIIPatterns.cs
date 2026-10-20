@@ -99,7 +99,7 @@ public static partial class USPIIPatterns
 
     // US phone number: (XXX) XXX-XXXX, XXX-XXX-XXXX, +1-XXX-XXX-XXXX
     [GeneratedRegex(
-        @"\b(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b",
+        NumericBoundary.Start + @"(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}" + NumericBoundary.End,
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex USPhoneNumberRegex();

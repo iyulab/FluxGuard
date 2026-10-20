@@ -72,6 +72,32 @@ public class L1StreamingPIIGuardTests
         result.Pattern.Should().Be("credit_card");
     }
 
+    [Theory]
+    [InlineData("2026-10-20T10:24:03.5968830+00:00 job finished")]   // the seconds would read as 03.5968830
+    [InlineData("elapsed 00:00:02.5551234")]
+    [InlineData("order 20261020103045123 shipped")]                  // a slice of a longer digit run
+    public async Task ValidateChunkAsync_TimestampOrLongNumber_IsNotAPhone(string text)
+    {
+        var context = new GuardContext { OriginalInput = "test" };
+
+        var result = await _guard.ValidateChunkAsync(context, text, text, TestContext.Current.CancellationToken);
+
+        result.Passed.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("call me at 010-1234-5678")]
+    [InlineData("10:24:03 call 02-555-1234")]
+    public async Task ValidateChunkAsync_WithPhone_SuppressesPII(string text)
+    {
+        var context = new GuardContext { OriginalInput = "test" };
+
+        var result = await _guard.ValidateChunkAsync(context, text, text, TestContext.Current.CancellationToken);
+
+        result.Passed.Should().BeFalse();
+        result.Pattern.Should().Be("phone");
+    }
+
     [Fact]
     public async Task ValidateChunkAsync_WithSSN_SuppressesPII()
     {

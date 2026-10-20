@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using FluxGuard.Core;
+using FluxGuard.L1.Patterns.PII;
 using FluxGuard.Streaming;
 
 namespace FluxGuard.L1.Guards.Streaming;
@@ -163,7 +164,7 @@ public sealed partial class L1StreamingPIIGuard : IStreamingGuard
 
     // Phone number pattern for streaming (less strict for real-time detection)
     [GeneratedRegex(
-        @"(?:\+\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}",
+        NumericBoundary.Start + @"(?:\+\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}" + NumericBoundary.End,
         RegexOptions.Compiled,
         matchTimeoutMilliseconds: 1000)]
     private static partial Regex PhoneNumberPattern();
