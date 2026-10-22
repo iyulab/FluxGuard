@@ -470,6 +470,10 @@ var guard = FluxGuardBuilder.Create().WithHooks(hooks => hooks
 For the escalation hooks (`OnBeforeEscalationAsync`, `OnEscalationTimeoutAsync`) implement `IFluxGuardHooks`, or
 derive from `FluxGuardHooks` and override what you need, and pass it to `WithHooks(...)`.
 
+An input with non-text parts (`GuardContext.Parts`) is judged once for its text and once for each part an extractor reads,
+so the hooks run for each of those checks: in a part's check, `ctx.OriginalInput` is the text extracted from that part
+(same `RequestId`). The combined result is what `CheckInputAsync` returns.
+
 ### Fail Mode
 
 ```csharp
