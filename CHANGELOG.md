@@ -25,6 +25,9 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   middleware sets up `CheckInputAsync(Arg.Any<GuardContext>())`; register an `IInputPartTextExtractor` to have the images
   judged (without one, the result's `UncheckedParts` counts them and the text verdict stands).
 
+### Dependencies
+- `Microsoft.Extensions.AI` 10.10.0 -> 10.11.0. Test tooling: xunit.v3 4.0.2, MTP HangDump 2.5.1, coverlet.MTP 10.1.0.
+
 ## 0.25.1 - 2026-10-20
 
 ### Fixed
