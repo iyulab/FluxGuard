@@ -56,6 +56,13 @@ public sealed record GuardResult
     public string RequestId { get; init; } = string.Empty;
 
     /// <summary>
+    /// How many of the input's non-text parts (<see cref="GuardContext.Parts"/>) were not judged because no registered
+    /// <see cref="Abstractions.IInputPartTextExtractor"/> reads their media type (or, in fail-open mode, its extraction
+    /// failed). Non-zero means the decision covers less than the model will see. Zero for a text-only input.
+    /// </summary>
+    public int UncheckedParts { get; init; }
+
+    /// <summary>
     /// Create safe pass result
     /// </summary>
     public static GuardResult Pass(string requestId, double latencyMs) => new()
@@ -161,4 +168,10 @@ public sealed record TriggeredGuard
     /// Additional details
     /// </summary>
     public string? Details { get; init; }
+
+    /// <summary>
+    /// The 1-based index in <see cref="GuardContext.Parts"/> of the part whose extracted text triggered this guard, or
+    /// <see langword="null"/> when the input text did.
+    /// </summary>
+    public int? Part { get; init; }
 }

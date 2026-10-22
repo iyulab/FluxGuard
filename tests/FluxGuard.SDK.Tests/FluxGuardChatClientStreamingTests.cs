@@ -37,7 +37,7 @@ public class FluxGuardChatClientStreamingTests
     private static IFluxGuard GuardBlockingOutput(string blockedOutput)
     {
         var guard = Substitute.For<IFluxGuard>();
-        guard.CheckInputAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        guard.CheckInputAsync(Arg.Any<GuardContext>())
             .Returns(GuardResult.Pass("in", 0));
         guard.CheckOutputAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(call => call.ArgAt<string>(1) == blockedOutput

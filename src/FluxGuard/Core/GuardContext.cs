@@ -16,6 +16,14 @@ public sealed class GuardContext
     public required string OriginalInput { get; init; }
 
     /// <summary>
+    /// The non-text parts of the user turn (attached images, …), in the order the model sees them. An input check judges
+    /// each through a registered <see cref="Abstractions.IInputPartTextExtractor"/> with the same input guards as the text,
+    /// and reports a part no extractor reads in <see cref="GuardResult.UncheckedParts"/>. Output checks ignore them.
+    /// Empty by default.
+    /// </summary>
+    public IReadOnlyList<GuardInputPart> Parts { get; init; } = [];
+
+    /// <summary>
     /// Normalized input text
     /// </summary>
     public string NormalizedInput { get; internal set; } = string.Empty;

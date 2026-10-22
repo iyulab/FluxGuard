@@ -23,6 +23,7 @@ internal sealed partial class FluxGuardCore : IFluxGuard
     private readonly ILogger<FluxGuardCore> _logger;
     private readonly UnicodeNormalizer _normalizer;
     private readonly IGuardStatsCollector? _stats;
+    private readonly IInputPartTextExtractor? _partExtractor;
 
     public FluxGuardCore(
         FluxGuardOptions options,
@@ -31,10 +32,12 @@ internal sealed partial class FluxGuardCore : IFluxGuard
         IReadOnlyList<IRemoteGuard> remoteGuards,
         IFluxGuardHooks hooks,
         ILoggerFactory loggerFactory,
-        IGuardStatsCollector? stats = null)
+        IGuardStatsCollector? stats = null,
+        IInputPartTextExtractor? partExtractor = null)
     {
         _options = options;
         _stats = stats;
+        _partExtractor = partExtractor;
         _inputGuards = [.. inputGuards.OrderBy(g => g.Order)];
         _outputGuards = [.. outputGuards.OrderBy(g => g.Order)];
         _remoteGuards = [.. remoteGuards.Where(g => g.IsEnabled).OrderBy(g => g.Order)];
@@ -67,9 +70,86 @@ internal sealed partial class FluxGuardCore : IFluxGuard
     public async Task<GuardResult> CheckInputAsync(GuardContext context)
     {
         var result = await CheckInputCoreAsync(context);
+        if (context.Parts.Count > 0)
+        {
+            result = await CheckPartsAsync(context, result);
+        }
+
         _stats?.RecordCheck(result, isInput: true);
         return result;
     }
+
+    /// <summary>
+    /// Judges each non-text part of the input by the text an <see cref="IInputPartTextExtractor"/> reads from it, with the
+    /// same input pipeline as the text, and folds the verdicts into <paramref name="textResult"/>: the most severe decision
+    /// wins, a part's triggered guards carry its index, and a part no extractor reads is counted as unchecked. Stops at the
+    /// first block — the decision is final, and an extraction can be costly (a vision model call).
+    /// </summary>
+    private async Task<GuardResult> CheckPartsAsync(GuardContext context, GuardResult textResult)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var result = textResult;
+        var uncheckedParts = 0;
+
+        for (var i = 0; i < context.Parts.Count && !result.IsBlocked; i++)
+        {
+            var part = context.Parts[i];
+            var index = i + 1;
+            if (_partExtractor is null || !_partExtractor.CanExtract(part.MediaType))
+            {
+                LogPartUnchecked(_logger, index, part.MediaType, context.RequestId);
+                uncheckedParts++;
+                continue;
+            }
+
+            string text;
+            try
+            {
+                text = await _partExtractor.ExtractTextAsync(part, context.CancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException || !context.CancellationToken.IsCancellationRequested)
+            {
+                LogPartExtractionFailed(_logger, ex, index, part.MediaType, context.RequestId);
+                if (_options.FailMode == FailMode.Closed)
+                {
+                    result = Merge(result, GuardResult.Block(context.RequestId, "Text extraction failed", 1.0, Severity.Critical, [], 0), index, part);
+                    break;
+                }
+
+                uncheckedParts++;
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                continue;
+            }
+
+            var partResult = await CheckInputCoreAsync(new GuardContext
+            {
+                RequestId = context.RequestId,
+                OriginalInput = text,
+                UserId = context.UserId,
+                SessionId = context.SessionId,
+                ConversationHistory = context.ConversationHistory,
+                Metadata = context.Metadata,
+                CancellationToken = context.CancellationToken
+            });
+            result = Merge(result, partResult, index, part);
+        }
+
+        return result with { UncheckedParts = uncheckedParts, LatencyMs = textResult.LatencyMs + stopwatch.Elapsed.TotalMilliseconds };
+    }
+
+    private static GuardResult Merge(GuardResult current, GuardResult part, int index, GuardInputPart source) => current with
+    {
+        Decision = part.Decision > current.Decision ? part.Decision : current.Decision,
+        Score = Math.Max(current.Score, part.Score),
+        MaxSeverity = part.MaxSeverity > current.MaxSeverity ? part.MaxSeverity : current.MaxSeverity,
+        TriggeredGuards = [.. current.TriggeredGuards, .. part.TriggeredGuards.Select(g => g with { Part = index })],
+        BlockReason = current.BlockReason
+            ?? (part.BlockReason is { } reason ? $"Part {index} ({source.MediaType}): {reason}" : null)
+    };
 
     private async Task<GuardResult> CheckInputCoreAsync(GuardContext context)
     {
@@ -713,6 +793,12 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 break;
         }
     }
+
+    [LoggerMessage(LogLevel.Warning, "Input part {Part} ({MediaType}) of request {RequestId} not checked: no part text extractor reads it")]
+    private static partial void LogPartUnchecked(ILogger logger, int part, string mediaType, string requestId);
+
+    [LoggerMessage(LogLevel.Error, "Text extraction of input part {Part} ({MediaType}) failed for request {RequestId}")]
+    private static partial void LogPartExtractionFailed(ILogger logger, Exception ex, int part, string mediaType, string requestId);
 
     [LoggerMessage(LogLevel.Debug, "Check skipped by OnBeforeCheck hook for request {RequestId}")]
     private static partial void LogCheckSkippedByHook(ILogger logger, string requestId);

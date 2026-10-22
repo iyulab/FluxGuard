@@ -37,10 +37,15 @@ public sealed partial class FluxGuardChatClient : DelegatingChatClient
         CancellationToken cancellationToken = default)
     {
         // Check input
-        var inputText = ExtractInputText(messages);
-        if (_options.ValidateInput && !string.IsNullOrEmpty(inputText))
+        var (inputText, inputParts) = ExtractInput(messages);
+        if (_options.ValidateInput && (!string.IsNullOrEmpty(inputText) || inputParts.Count > 0))
         {
-            var inputResult = await _guard.CheckInputAsync(inputText, cancellationToken);
+            var inputResult = await _guard.CheckInputAsync(new GuardContext
+            {
+                OriginalInput = inputText ?? string.Empty,
+                Parts = inputParts,
+                CancellationToken = cancellationToken
+            });
 
             if (inputResult.IsBlocked)
             {
@@ -87,10 +92,15 @@ public sealed partial class FluxGuardChatClient : DelegatingChatClient
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // Check input
-        var inputText = ExtractInputText(messages);
-        if (_options.ValidateInput && !string.IsNullOrEmpty(inputText))
+        var (inputText, inputParts) = ExtractInput(messages);
+        if (_options.ValidateInput && (!string.IsNullOrEmpty(inputText) || inputParts.Count > 0))
         {
-            var inputResult = await _guard.CheckInputAsync(inputText, cancellationToken);
+            var inputResult = await _guard.CheckInputAsync(new GuardContext
+            {
+                OriginalInput = inputText ?? string.Empty,
+                Parts = inputParts,
+                CancellationToken = cancellationToken
+            });
 
             if (inputResult.IsBlocked)
             {
@@ -132,11 +142,25 @@ public sealed partial class FluxGuardChatClient : DelegatingChatClient
         }
     }
 
-    private static string? ExtractInputText(IEnumerable<ChatMessage> messages)
+    /// <summary>
+    /// The last user message: its text, and its inline non-text contents (<see cref="DataContent"/> — an attached image) as
+    /// <see cref="GuardInputPart"/>s, which the guard judges through a registered part text extractor. A part referenced by
+    /// URI only (<see cref="UriContent"/>) has no bytes here and is not passed.
+    /// </summary>
+    private static (string? Text, IReadOnlyList<GuardInputPart> Parts) ExtractInput(IEnumerable<ChatMessage> messages)
     {
-        // Get the last user message
         var lastUserMessage = messages.LastOrDefault(m => m.Role == ChatRole.User);
-        return lastUserMessage?.Text;
+        if (lastUserMessage is null)
+        {
+            return (null, []);
+        }
+
+        var parts = lastUserMessage.Contents
+            .OfType<DataContent>()
+            .Where(d => !d.Data.IsEmpty)
+            .Select(d => new GuardInputPart(d.MediaType, d.Data))
+            .ToList();
+        return (lastUserMessage.Text, parts);
     }
 
     private static string? ExtractOutputText(ChatResponse response)

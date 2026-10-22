@@ -4,6 +4,27 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## [Unreleased]
+
+### Added
+- **An input check can cover the non-text parts of a user turn — an instruction written inside an attached image is judged
+  like the same words typed.** `GuardContext.Parts` carries the turn's non-text parts (`GuardInputPart`: media type +
+  bytes). A part is judged by the text a consumer-registered `IInputPartTextExtractor` reads from it (OCR, or the
+  consumer's own vision model with a transcribe-only prompt; `FluxGuardBuilder.WithPartTextExtractor`, or an
+  `IInputPartTextExtractor` service for `AddFluxGuard`), with the same input pipeline as the text. The most severe decision
+  wins, `TriggeredGuard.Part` names the part that triggered (1-based; null = the text), and the block reason starts with
+  `Part N (media type):`. A part no extractor reads is counted in the new `GuardResult.UncheckedParts` instead of passing
+  silently; a failed extraction blocks in `FailMode.Closed` and counts as unchecked in `Open`. Checking stops at the first
+  block. FluxGuard ships no extractor and takes no new dependency.
+
+### Changed
+- **Breaking** (`FluxGuard.SDK`) — **`FluxGuardChatClient` guards the images of the last user message too, and a user
+  message with images and no text is now checked.** It passes the message's inline images (`DataContent`) as
+  `GuardContext.Parts` and calls `IFluxGuard.CheckInputAsync(GuardContext)` instead of `CheckInputAsync(string, …)`; an image
+  referenced by URI only (`UriContent`) is not fetched and not passed. Migration: an `IFluxGuard` test double behind the
+  middleware sets up `CheckInputAsync(Arg.Any<GuardContext>())`; register an `IInputPartTextExtractor` to have the images
+  judged (without one, the result's `UncheckedParts` counts them and the text verdict stands).
+
 ## 0.25.1 - 2026-10-20
 
 ### Fixed

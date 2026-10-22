@@ -105,6 +105,7 @@ Not part of any preset: the L3 (remote) guards are added explicitly — see
 |---------|-------------|-------------------|
 | Input guards (prompt injection, jailbreak, encoding bypass, PII exposure) | `IFluxGuard.CheckInputAsync` | On in every preset (Minimal: prompt injection + jailbreak); switch each off with `ConfigureInputGuards(o => o.EnableXxx = false)` |
 | Output guards (PII leakage, refusal) | `IFluxGuard.CheckOutputAsync` | On by default (Minimal: PII leakage only); `ConfigureOutputGuards` |
+| Non-text input parts (images in a vision prompt) | `GuardContext.Parts` (`GuardInputPart`) + `IInputPartTextExtractor` via `FluxGuardBuilder.WithPartTextExtractor` (or a registered service for `AddFluxGuard`); `GuardResult.UncheckedParts`, `TriggeredGuard.Part`. `FluxGuardChatClient` passes a user message's inline images | Opt-in: without an extractor parts are counted as unchecked, not judged |
 | Input normalization (Unicode, zero-width, homoglyphs) | `InputGuardOptions.EnableUnicodeNormalization` / `EnableZeroWidthFiltering` / `EnableHomoglyphDetection` | On by default |
 | Length limits | `InputGuardOptions.MaxInputLength`, `OutputGuardOptions.MaxOutputLength` | On (128,000 characters); `0` disables |
 | Presets | `FluxGuardBuilder.WithPreset(GuardPreset)`, `ApplyMinimalPreset()` / `ApplyStandardPreset()` / `ApplyStrictPreset()` | `Standard` when none is named |

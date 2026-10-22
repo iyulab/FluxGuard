@@ -119,6 +119,13 @@ public static class ServiceCollectionExtensions
                 builder.WithStats(stats);
             }
 
+            // A registered part text extractor reads the non-text parts of an input; none registered, they are counted
+            // as unchecked.
+            if (sp.GetService<IInputPartTextExtractor>() is { } partExtractor)
+            {
+                builder.WithPartTextExtractor(partExtractor);
+            }
+
             if (configureBuilder is null)
             {
                 // The preset's guards are created in Build(), from these options and this registry - the same

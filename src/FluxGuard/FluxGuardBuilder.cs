@@ -25,6 +25,7 @@ public sealed class FluxGuardBuilder
     private GuardPreset? _requestedPreset;
     private IPatternRegistry? _patternRegistry;
     private IGuardStatsCollector? _stats;
+    private IInputPartTextExtractor? _partExtractor;
 
     /// <summary>
     /// Create new builder instance
@@ -204,6 +205,18 @@ public sealed class FluxGuardBuilder
     }
 
     /// <summary>
+    /// Reads the non-text parts of an input (<see cref="GuardContext.Parts"/> — attached images) into text the input guards
+    /// judge. Without one, such parts are not judged and <see cref="GuardResult.UncheckedParts"/> counts them.
+    /// </summary>
+    /// <param name="extractor">The consumer's extractor (OCR, or its own vision model with a transcribe-only prompt).</param>
+    /// <returns>Builder instance</returns>
+    public FluxGuardBuilder WithPartTextExtractor(IInputPartTextExtractor extractor)
+    {
+        _partExtractor = extractor ?? throw new ArgumentNullException(nameof(extractor));
+        return this;
+    }
+
+    /// <summary>
     /// Build FluxGuard instance
     /// </summary>
     /// <returns>FluxGuard instance</returns>
@@ -228,7 +241,7 @@ public sealed class FluxGuardBuilder
             outputGuards.AddRange(PresetGuards.OutputGuards(requested, registry, _options));
         }
 
-        return new FluxGuardCore(_options, inputGuards, outputGuards, _remoteGuards, _hooks, _loggerFactory, _stats);
+        return new FluxGuardCore(_options, inputGuards, outputGuards, _remoteGuards, _hooks, _loggerFactory, _stats, _partExtractor);
     }
 
     /// <summary>Asks for a preset's guards; they are created in <see cref="Build"/> from the final options.</summary>
