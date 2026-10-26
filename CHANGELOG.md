@@ -4,6 +4,12 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
+## [Unreleased]
+
+### Dependencies
+
+- Re-pinned third-party packages: 6 .NET servicing pins (Microsoft.Extensions) 10.0.13 -> 10.0.14 (the 10.0.14 security servicing release).
+
 ## 0.26.0 - 2026-10-23
 
 ### Added
