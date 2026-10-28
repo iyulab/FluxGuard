@@ -6,6 +6,9 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
 
 ## [Unreleased]
 
+### Removed
+- **`FluxGuard.Remote` no longer depends on `Microsoft.Extensions.Http`**: nothing in the package used it (no `AddHttpClient`, no `IHttpClientFactory`). A consumer that took Http transitively and registers HTTP clients must reference it themselves.
+
 ### Dependencies
 
 - Re-pinned third-party packages: 6 .NET servicing pins (Microsoft.Extensions) 10.0.13 -> 10.0.14 (the 10.0.14 security servicing release).
