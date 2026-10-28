@@ -16,7 +16,7 @@
     <!-- Testing (xUnit v3 / Microsoft.Testing.Platform) -->
     <PackageVersion Include="xunit.v3" Version="4.0.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.5.1" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.5.2" />
     <!-- coverlet.MTP: direct MTP-native successor to coverlet.collector (same project, same
          versioning line) — kept over Microsoft.Testing.Extensions.CodeCoverage to stay on the
          open-source tool this ecosystem already standardized on, not switch to a closed-source-
