@@ -20,6 +20,11 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
   relied on passing because it was encoded and hostile is now blocked or flagged. New overload
   `L1EncodingBypassGuard(registry, isEnabled, invisibleCharThreshold, homoglyphThreshold, payloadEscalationThreshold)`;
   the strict preset passes 0.3.
+- **Reading an input part with an `IInputPartTextExtractor` is bounded by `GuardTimeoutMs`.** A hung OCR or vision call used
+  to hold the request past the timeout and never reached `FailMode`. The parts share one `GuardTimeoutMs` budget; an
+  extraction that outlives it is an extraction failure (`Closed` blocks with `Part N (...): Text extraction failed`, `Open`
+  counts the part in `UncheckedParts`). The caller's cancellation still surfaces as `OperationCanceledException`;
+  `GuardTimeoutMs = 0` leaves the extraction unbounded.
 
 ### Removed
 - **`FluxGuard.Remote` no longer depends on `Microsoft.Extensions.Http`**: nothing in the package used it (no `AddHttpClient`, no `IHttpClientFactory`). A consumer that took Http transitively and registers HTTP clients must reference it themselves.

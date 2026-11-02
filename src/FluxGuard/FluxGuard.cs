@@ -91,6 +91,11 @@ internal sealed partial class FluxGuardCore : IFluxGuard
         var result = textResult;
         var uncheckedParts = 0;
 
+        // Reading the parts shares one budget of GuardTimeoutMs, so the wait a slow extractor can add to a request has a
+        // known upper bound whatever the number of parts. Zero or less means no limit, as for the guards.
+        TimeSpan? extractionBudget = _options.GuardTimeoutMs > 0 ? TimeSpan.FromMilliseconds(_options.GuardTimeoutMs) : null;
+        var extractionSpent = TimeSpan.Zero;
+
         for (var i = 0; i < context.Parts.Count && !result.IsBlocked; i++)
         {
             var part = context.Parts[i];
@@ -103,12 +108,14 @@ internal sealed partial class FluxGuardCore : IFluxGuard
             }
 
             string text;
+            var extractionStarted = Stopwatch.GetTimestamp();
             try
             {
-                text = await _partExtractor.ExtractTextAsync(part, context.CancellationToken);
+                text = await ExtractWithinBudgetAsync(part, extractionBudget, extractionSpent, context.CancellationToken);
             }
             catch (Exception ex) when (ex is not OperationCanceledException || !context.CancellationToken.IsCancellationRequested)
             {
+                extractionSpent += Stopwatch.GetElapsedTime(extractionStarted);
                 LogPartExtractionFailed(_logger, ex, index, part.MediaType, context.RequestId);
                 if (_options.FailMode == FailMode.Closed)
                 {
@@ -119,6 +126,8 @@ internal sealed partial class FluxGuardCore : IFluxGuard
                 uncheckedParts++;
                 continue;
             }
+
+            extractionSpent += Stopwatch.GetElapsedTime(extractionStarted);
 
             if (string.IsNullOrWhiteSpace(text))
             {
@@ -139,6 +148,36 @@ internal sealed partial class FluxGuardCore : IFluxGuard
         }
 
         return result with { UncheckedParts = uncheckedParts, LatencyMs = textResult.LatencyMs + stopwatch.Elapsed.TotalMilliseconds };
+    }
+
+    /// <summary>
+    /// Reads one part within what is left of the extraction budget. An extraction that outlives it is an extraction failure
+    /// (a <see cref="TimeoutException"/>), so it takes the same <see cref="FailMode"/> path as an extractor that throws; the
+    /// caller's cancellation is not a timeout and still surfaces as <see cref="OperationCanceledException"/>. The pipeline
+    /// stops waiting; it cannot stop the extractor, whose work runs on unobserved.
+    /// </summary>
+    private async Task<string> ExtractWithinBudgetAsync(
+        GuardInputPart part, TimeSpan? budget, TimeSpan spent, CancellationToken cancellationToken)
+    {
+        if (budget is not { } total)
+        {
+            return await _partExtractor!.ExtractTextAsync(part, cancellationToken);
+        }
+
+        var remaining = total - spent;
+        if (remaining <= TimeSpan.Zero)
+        {
+            throw new TimeoutException($"Text extraction did not start: the {total.TotalMilliseconds:0} ms extraction budget is spent.");
+        }
+
+        try
+        {
+            return await _partExtractor!.ExtractTextAsync(part, cancellationToken).WaitAsync(remaining, cancellationToken);
+        }
+        catch (TimeoutException)
+        {
+            throw new TimeoutException($"Text extraction did not finish within the {total.TotalMilliseconds:0} ms extraction budget.");
+        }
     }
 
     private static GuardResult Merge(GuardResult current, GuardResult part, int index, GuardInputPart source) => current with

@@ -42,6 +42,18 @@ public class InputPartTests
             throw new InvalidOperationException("vision model unavailable");
     }
 
+    /// <summary>Takes <paramref name="delay"/> to answer and ignores its cancellation token - a hung vision call.</summary>
+    private sealed class Slow(TimeSpan delay, string text = "a harmless picture") : IInputPartTextExtractor
+    {
+        public bool CanExtract(string mediaType) => true;
+
+        public async Task<string> ExtractTextAsync(GuardInputPart part, CancellationToken cancellationToken = default)
+        {
+            await Task.Delay(delay, CancellationToken.None);
+            return text;
+        }
+    }
+
     private static GuardInputPart Image(string text) => new("image/png", Encoding.UTF8.GetBytes(text));
 
     private static GuardContext Turn(string text, params GuardInputPart[] parts) =>
@@ -106,6 +118,71 @@ public class InputPartTests
 
         result.IsBlocked.Should().Be(blocked);
         result.UncheckedParts.Should().Be(uncheckedParts);
+    }
+
+    [Theory]
+    [InlineData(FailMode.Closed, true, 0)]
+    [InlineData(FailMode.Open, false, 1)]
+    public async Task AnExtractionSlowerThanTheGuardTimeout_FollowsTheFailMode_AtTheTimeout(FailMode failMode, bool blocked, int uncheckedParts)
+    {
+        var guard = FluxGuardBuilder.Create(b => b
+            .WithFailMode(failMode)
+            .Configure(o => o.GuardTimeoutMs = 300)
+            .WithPartTextExtractor(new Slow(TimeSpan.FromSeconds(20)))).Build();
+
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var result = await guard.CheckInputAsync(Turn("Describe this", Image("x")));
+        watch.Stop();
+
+        watch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5), "the wait is bounded by the timeout, not by the extractor");
+        result.IsBlocked.Should().Be(blocked);
+        result.UncheckedParts.Should().Be(uncheckedParts);
+        if (blocked)
+        {
+            result.BlockReason.Should().Be("Part 1 (image/png): Text extraction failed");
+        }
+    }
+
+    [Fact]
+    public async Task TheCallersCancellation_IsNotATimeout_AndStillPropagates()
+    {
+        var guard = FluxGuardBuilder.Create(b => b
+            .Configure(o => o.GuardTimeoutMs = 60_000)
+            .WithPartTextExtractor(new Slow(TimeSpan.FromSeconds(20)))).Build();
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(Ct);
+        cts.CancelAfter(TimeSpan.FromMilliseconds(150));
+        var context = new GuardContext { OriginalInput = "Describe this", Parts = [Image("x")], CancellationToken = cts.Token };
+
+        var act = async () => await guard.CheckInputAsync(context);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task AGuardTimeoutOfZero_LeavesTheExtractionUnbounded()
+    {
+        var guard = FluxGuardBuilder.Create(b => b
+            .Configure(o => o.GuardTimeoutMs = 0)
+            .WithPartTextExtractor(new Slow(TimeSpan.FromMilliseconds(400), Injection))).Build();
+
+        var result = await guard.CheckInputAsync(Turn("Describe this", Image("x")));
+
+        result.IsBlocked.Should().BeTrue("the slow extraction finished and its text was judged");
+    }
+
+    [Fact]
+    public async Task TheExtractionBudget_IsSharedAcrossParts()
+    {
+        // Two parts of 250 ms each against a 400 ms budget: the first fits, the second runs out of what is left.
+        var guard = FluxGuardBuilder.Create(b => b
+            .WithFailMode(FailMode.Closed)
+            .Configure(o => o.GuardTimeoutMs = 400)
+            .WithPartTextExtractor(new Slow(TimeSpan.FromMilliseconds(250)))).Build();
+
+        var result = await guard.CheckInputAsync(Turn("Describe these", Image("a"), Image("b")));
+
+        result.IsBlocked.Should().BeTrue();
+        result.BlockReason.Should().Be("Part 2 (image/png): Text extraction failed");
     }
 
     [Fact]
