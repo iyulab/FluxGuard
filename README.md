@@ -447,6 +447,11 @@ A blocked request or response throws `FluxGuardChatBlockedException` (its `Resul
 response is checked once, on the whole text, when the stream ends: the updates have already been forwarded, so the
 exception arrives after the last one and is the caller's signal to retract what it showed.
 
+Scope of the input check: `FluxGuardChatClient` judges the **last user message** - its text and, with an
+`IInputPartTextExtractor`, its inline images. Content in other messages is not checked by it: an earlier user turn, and
+what a tool returned (text or an image in a tool-role message). Check tool-result text with `ValidateToolResultAsync`
+(a tool-result image has no check yet).
+
 ## Hooks & Customization
 
 Intercept at every decision point.
