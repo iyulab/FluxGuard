@@ -4,7 +4,7 @@ All notable changes to FluxGuard are documented here.
 
 FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are called out explicitly.
 
-## [Unreleased]
+## 0.27.0 - Unreleased
 
 ### Fixed
 - **Breaking** (observed judgment) - **Words hidden behind an encoding are now judged like the same words typed.** `L1EncodingBypassGuard`
