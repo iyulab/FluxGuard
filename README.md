@@ -91,7 +91,7 @@ async Task<string?> ReplyAsync(string userMessage)
 **This alone provides (standard preset, L1):**
 - Prompt injection detection ✅
 - Jailbreak attempt detection ✅
-- Encoding bypass attack defense ✅
+- Encoding bypass defense ✅ (words hidden in Base64, hex, Unicode escapes, HTML entities, percent-encoding, ROT13 or reversed text are judged like the same words typed)
 - PII exposure (input) / leakage (output) detection ✅
 - Refusal detection on output ✅
 - Input / output length limits (`MaxInputLength`, `MaxOutputLength`; 128,000 characters by default) ✅
@@ -166,7 +166,7 @@ and add it with `AddInputGuard` / `AddOutputGuard` (see [Custom Guards](#custom-
 |-------|-------------|-------|---------------|
 | `PromptInjection` | Instruction override detection | L1 | ✅ `EnablePromptInjection` |
 | `Jailbreak` | DAN, AIM persona attack blocking | L1 | ✅ `EnableJailbreak` |
-| `EncodingBypass` | Base64, Unicode bypass detection | L1 | ✅ `EnableEncodingBypass` |
+| `EncodingBypass` | Invisible-character and homoglyph floods; decodes Base64 (also URL-safe), hex (`\x..`, `0x..`, byte pairs), Unicode escapes, HTML entities and percent-encoding, and ROT13 or reversed text when the input asks for them (up to two layers), then runs the prompt-injection and jailbreak guards on the decoded text - the verdict is the one the plain words get; encoded content that says nothing hostile (a hash, a token, a data URI) passes. Pig Latin is recognised but cannot be decoded, so it changes no verdict. Input with more encoded content than one check reads (about 1 M characters, 32 decoded spans) is escalated, never passed unread | L1 | ✅ `EnableEncodingBypass` |
 | `PIIExposure` | PII detection in input (blocks credit cards, keys and passwords; flags other PII such as email or IP addresses) | L1 | ✅ `EnablePIIExposure` |
 
 ### Output Guards

@@ -6,6 +6,21 @@ FluxGuard is pre-1.0; minor versions may change behavior. Behavior changes are c
 
 ## [Unreleased]
 
+### Fixed
+- **Breaking** (observed judgment) - **Words hidden behind an encoding are now judged like the same words typed.** `L1EncodingBypassGuard`
+  found encodings but acted on only one of its eight patterns (the others' confidence sat under its own 0.8 threshold), so
+  a Base64, hex, HTML-entity, percent-encoded, ROT13 or reversed "Ignore all previous instructions..." passed in every
+  preset while the README listed the defense. The guard now decodes the spans it can read (Base64 incl. URL-safe, hex
+  `\x..`/`0x..`/byte pairs, `\u....` escapes, HTML entities, percent-encoding, and ROT13 or reversed text when the input
+  asks for it; up to two layers), runs the prompt-injection and jailbreak guards on the decoded text, and blocks or
+  escalates as they would for plain text. The result's `Pattern` is `<encoding>:<pattern>` (for example `Base64:...`).
+  Encoded content that says nothing hostile - a hash, a JWT, an image data URI - still passes. Input with more encoded
+  content than one check reads (about 1 M characters or 32 decoded spans) is escalated instead of passing unread. Pig
+  Latin is recognised but cannot be decoded, so it still changes no verdict. **Migration**: none in code; an input you
+  relied on passing because it was encoded and hostile is now blocked or flagged. New overload
+  `L1EncodingBypassGuard(registry, isEnabled, invisibleCharThreshold, homoglyphThreshold, payloadEscalationThreshold)`;
+  the strict preset passes 0.3.
+
 ### Removed
 - **`FluxGuard.Remote` no longer depends on `Microsoft.Extensions.Http`**: nothing in the package used it (no `AddHttpClient`, no `IHttpClientFactory`). A consumer that took Http transitively and registers HTTP clients must reference it themselves.
 

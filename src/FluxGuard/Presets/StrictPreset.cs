@@ -37,7 +37,8 @@ public static class StrictPreset
             registry,
             options.EnableEncodingBypass,
             invisibleCharThreshold: 3,
-            homoglyphThreshold: 5);
+            homoglyphThreshold: 5,
+            payloadEscalationThreshold: 0.3);
 
         yield return new L1PromptInjectionGuard(
             registry,
