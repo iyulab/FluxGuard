@@ -22,10 +22,19 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Nothing by default; every job below asks for what it needs.
+permissions: {}
+
+# The push to nuget.org is not made here. The `pack` job builds and packs, uploads the packages as an artifact and the `publish` job asks the
+# organization's central publisher (iyulab/nuget-publish) to push them; that repository holds the only trusted-publishing policy
+# and checks this repository, this workflow file and the package ids against an allowlist. No NuGet credential lives here.
+# The pack, publish and release jobs never run on a pull request (the central publisher refuses such a run).
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
+    permissions:
+      contents: read
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -64,10 +73,13 @@ jobs:
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  release:
+  pack:
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # tag + GitHub release
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      publish: ${{ steps.changed.outputs.changed }}
     timeout-minutes: 20
     needs: build
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
@@ -142,14 +154,53 @@ jobs:
           done
           [ "$missing" -eq 0 ]
 
-      - name: Push to NuGet
+      # Only .nupkg and .snupkg files: the central publisher refuses an artifact that holds anything else.
+      - name: Upload packages
         if: steps.changed.outputs.changed == 'true'
-        run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuget-packages
+          path: |
+            ./artifacts/*.nupkg
+            ./artifacts/*.snupkg
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Summary
+        if: steps.changed.outputs.changed == 'true'
+        run: |
+          echo "## Handed to the central NuGet publisher" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Packages:**" >> $GITHUB_STEP_SUMMARY
+          echo "- FluxGuard" >> $GITHUB_STEP_SUMMARY
+          echo "- FluxGuard.Remote" >> $GITHUB_STEP_SUMMARY
+          echo "- FluxGuard.SDK" >> $GITHUB_STEP_SUMMARY
+
+  # Asks the central publisher to push the packages and waits for its answer: this job succeeds only when they are on nuget.org.
+  # Until the repository is on the publisher's allowlist the call is refused and the jobs after it do not run.
+  publish:
+    needs: pack
+    if: ${{ needs.pack.outputs.publish == 'true' }}
+    uses: iyulab/nuget-publish/.github/workflows/request.yml@2166748abf716fb58855228f65fc6b8f78c2780f # main
+    permissions: {}
+    secrets: inherit
+
+  # The tag and the GitHub release exist only for a version that reached nuget.org.
+  release:
+    needs: [pack, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write   # tag + GitHub release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
       # Release notes = this version's CHANGELOG.md section. Every iyulab publish workflow carries this awk program
       # verbatim; change it in all of them or in none.
       - name: GitHub release (notes = this version's CHANGELOG section)
-        if: steps.changed.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -158,15 +209,3 @@ jobs:
           awk -v v="$VERSION" '/^## /{if(p)exit;h=$0;sub(/^## +\[?v?/,"",h);c=substr(h,length(v)+1,1);if(index(h,v)==1&&(c==""||c=="]"||c==" "||c=="\t")){p=1;next}}p&&(n||$0!~/^[ \t]*$/){l[++n]=$0}END{while(n&&(l[n]~/^[ \t]*$/||l[n]~/^---+$/))n--;for(i=1;i<=n;i++)print l[i]}' CHANGELOG.md > release-notes.md
           if [ ! -s release-notes.md ]; then echo "::error::CHANGELOG.md has no section for $VERSION"; exit 1; fi
           gh release create "v$VERSION" --title "v$VERSION" --notes-file release-notes.md --target "$GITHUB_SHA"
-
-      - name: Summary
-        if: steps.changed.outputs.changed == 'true'
-        run: |
-          echo "## Published to NuGet" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Packages:**" >> $GITHUB_STEP_SUMMARY
-          echo "- FluxGuard" >> $GITHUB_STEP_SUMMARY
-          echo "- FluxGuard.Remote" >> $GITHUB_STEP_SUMMARY
-          echo "- FluxGuard.SDK" >> $GITHUB_STEP_SUMMARY
